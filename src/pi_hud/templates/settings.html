@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% macro thr(key) %}{{ overrides.get(key, cfg.getint('thresholds', key)) }}{% endmacro %}
+{% block content %}
+<div class="page-top">
+  <div>
+    <div class="kicker">Device</div>
+    <h2>Settings</h2>
+    <p>Thresholds below apply live. Network and display pins live in the config file and need a service restart.</p>
+  </div>
+</div>
+
+{% if lan_mode %}
+<div class="callout" style="margin-bottom:24px;border-color:color-mix(in srgb,var(--danger),transparent 55%);background:color-mix(in srgb,var(--danger),transparent 90%);color:#F3B7B1">
+  LAN mode is enabled ({{ cfg.get('api','host') }}). Do not port-forward pi-hud to the internet.
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Live thresholds</h3>
+    <form class="stack" method="post" action="/settings">
+      <label>Temperature warning (°C)<input name="temp_warning_c" value="{{ thr('temp_warning_c') }}"></label>
+      <label>Temperature danger (°C)<input name="temp_danger_c" value="{{ thr('temp_danger_c') }}"></label>
+      <label>CPU warning (%)<input name="cpu_warning_percent" value="{{ thr('cpu_warning_percent') }}"></label>
+      <label>CPU danger (%)<input name="cpu_danger_percent" value="{{ thr('cpu_danger_percent') }}"></label>
+      <label>RAM warning (%)<input name="ram_warning_percent" value="{{ thr('ram_warning_percent') }}"></label>
+      <label>RAM danger (%)<input name="ram_danger_percent" value="{{ thr('ram_danger_percent') }}"></label>
+      <label>Pin power-dip alerts on display
+        <select name="power_event_pinning">
+          <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Yes</option>
+          <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>No</option>
+        </select>
+      </label>
+      <div><button class="btn primary" type="submit">Save thresholds</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Config file (restart to change)</h3>
+    <p class="small" style="margin-bottom:12px">Edit <span class="mono">{{ cfg.path or '/etc/pi-hud/config.ini' }}</span> then <span class="mono">systemctl restart pi-hud</span>.</p>
+    <table>
+      <tr><th>Key</th><th>Value</th></tr>
+      <tr><td>API host</td><td class="mono">{{ cfg.get('api','host') }}</td></tr>
+      <tr><td>API port</td><td class="mono">{{ cfg.get('api','port') }}</td></tr>
+      <tr><td>LAN mode</td><td class="mono">{{ cfg.get('api','lan_mode') }}</td></tr>
+      <tr><td>Display rotation</td><td class="mono">{{ cfg.get('display','rotation') }}</td></tr>
+      <tr><td>x / y offset</td><td class="mono">{{ cfg.get('display','x_offset') }} / {{ cfg.get('display','y_offset') }}</td></tr>
+      <tr><td>DC / RST / BL pin</td><td class="mono">{{ cfg.get('display','dc_pin') }} / {{ cfg.get('display','rst_pin') }} / {{ cfg.get('display','bl_pin') }}</td></tr>
+      <tr><td>Normal refresh</td><td class="mono">{{ cfg.get('display','normal_refresh_seconds') }}s</td></tr>
+      <tr><td>Power refresh</td><td class="mono">{{ cfg.get('display','power_refresh_seconds') }}s</td></tr>
+    </table>
+  </div>
+</div>
+{% endblock %}

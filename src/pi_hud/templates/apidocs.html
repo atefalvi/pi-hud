@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-top">
+  <div>
+    <div class="kicker">Integration</div>
+    <h2>API</h2>
+    <p>Apps authenticate with a bearer token and POST messages. Create a token on the Tokens page.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h3>Same-Pi request (pi-dns-sync)</h3>
+  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages \
+  -H "Authorization: Bearer ph_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "pi-dns-sync",
+    "type": "success",
+    "title": "DNS Updated",
+    "message": "Cloudflare A record updated.",
+    "pinned": true,
+    "priority": 6,
+    "category": "dns",
+    "metadata": {
+      "host": "home.example.com",
+      "record_type": "A",
+      "previous_value": "203.0.113.42",
+      "updated_value": "198.51.100.27"
+    }
+  }'</div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h3>LAN device request</h3>
+  <div class="code">curl -X POST http://&lt;PI_IP&gt;:{{ port }}/api/v1/messages \
+  -H "Authorization: Bearer ph_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"source":"nas-backup","type":"success","title":"Backup Done","message":"TrueNAS sync finished","priority":3}'</div>
+  <p class="small" style="margin-top:12px">LAN requests require <span class="mono">api_host = 0.0.0.0</span> in the config and a service restart.</p>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h3>Warning message</h3>
+  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages \
+  -H "Authorization: Bearer ph_xxx" -H "Content-Type: application/json" \
+  -d '{"source":"pi-dns-sync","type":"error","title":"DNS Failed","message":"Cloudflare API rejected update request.","pinned":true,"priority":9}'</div>
+</div>
+
+<div class="card">
+  <h3>Clear the current alert</h3>
+  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages/current/clear</div>
+  <p class="small" style="margin-top:12px">Health check: <span class="mono">GET /health</span> · List: <span class="mono">GET /api/v1/messages?status=active</span></p>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block content %}
+<div class="page-top">
+  <div>
+    <div class="kicker">Current instrument</div>
+    <h2>Dashboard</h2>
+    <p>The physical display preview plus a concise detail card for the active alert.</p>
+  </div>
+  <div class="btn-row">
+    <button class="btn danger" data-action="/api/v1/messages/current/clear">Clear current</button>
+    <button class="btn" data-action="/api/v1/messages/clear-all">Clear all</button>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Current display</h3>
+    <div class="display-preview"><img src="/display.png" width="320" height="160" id="hud" alt="HUD preview"></div>
+    <p class="small" style="margin-top:12px">{{ active_count }} active message{{ '' if active_count==1 else 's' }} · refreshes every few seconds</p>
+  </div>
+
+  <div class="card">
+    <h3>Active alert summary</h3>
+    {% if active %}
+      <div class="title-line" style="margin-bottom:14px">
+        {{ m.sev(active.type) }}<strong style="font-size:18px">{{ active.title }}</strong>{{ m.pin(active) }}
+      </div>
+      {% set md = active.metadata %}
+      {% if md.previous_value and md.updated_value %}
+      <div class="stats">
+        <div class="stat"><div class="label">Old IP</div><div class="value blue">{{ md.previous_value }}</div></div>
+        <div class="stat"><div class="label">New IP</div><div class="value green">{{ md.updated_value }}</div></div>
+        <div class="stat"><div class="label">Record</div><div class="value ember">{{ md.record_type or 'A' }}</div></div>
+      </div>
+      {% endif %}
+      {% if active.message %}<div class="callout">{{ active.message }}</div>{% endif %}
+      <div class="btn-row" style="justify-content:start;margin-top:16px">
+        <a class="btn" href="/messages?id={{ active.id }}">Open detail</a>
+        <button class="btn danger" data-action="/api/v1/messages/{{ active.id }}/clear">Clear on display</button>
+      </div>
+    {% else %}
+      <div class="empty">No active alerts. The HUD is showing normal system status.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pi-hud · {{ title|default('Observatory') }}</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="pi-brand">
+      <div class="pi-mark">π</div>
+      <div class="pi-name"><strong>pi-hud</strong><span>Observatory</span></div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="{{ 'active' if nav=='dashboard' }}"><span class="glyph">▣</span> Dashboard</a>
+      <a href="/messages" class="{{ 'active' if nav=='messages' }}"><span class="glyph">◇</span> Messages</a>
+      <a href="/tokens" class="{{ 'active' if nav=='tokens' }}"><span class="glyph">◈</span> Tokens</a>
+      <a href="/settings" class="{{ 'active' if nav=='settings' }}"><span class="glyph">◎</span> Settings</a>
+      <a href="/logs" class="{{ 'active' if nav=='logs' }}"><span class="glyph">☰</span> Logs</a>
+      <a href="/docs" class="{{ 'active' if nav=='docs' }}"><span class="glyph">{}</span> API</a>
+    </nav>
+  </aside>
+  <main class="panel">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

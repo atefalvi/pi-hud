@@ -1,0 +1,25 @@
+[project]
+name = "pi-hud"
+version = "1.0.0"
+description = "Lightweight Raspberry Pi display and notification hub"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "jinja2>=3.1",
+    "pillow>=10.0",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+hardware = ["spidev", "RPi.GPIO"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pi_hud = ["templates/*.html", "static/**/*"]

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-top">
+  <div>
+    <div class="kicker">Observability</div>
+    <h2>Logs</h2>
+    <p>API requests, message events, auth failures, display and power events.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h3>Power events</h3>
+  {% if power %}
+  <table>
+    <tr><th>Time</th><th>Raw</th><th>Undervolt now</th><th>Throttled now</th><th>Occurred</th></tr>
+    {% for p in power %}
+    <tr>
+      <td class="mono">{{ p.created_at }}</td>
+      <td class="mono">{{ p.raw_value }}</td>
+      <td>{% if p.undervoltage_now %}<span class="red">yes</span>{% else %}—{% endif %}</td>
+      <td>{% if p.throttled_now %}<span class="yellow">yes</span>{% else %}—{% endif %}</td>
+      <td>{{ 'UV' if p.undervoltage_occurred }} {{ 'THR' if p.throttled_occurred }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<div class="empty">No power events recorded. Good — the supply looks stable.</div>{% endif %}
+</div>
+
+<div class="card">
+  <h3>Event log</h3>
+  {% if logs %}
+  <table>
+    <tr><th>Time</th><th>Level</th><th>Source</th><th>Event</th><th>Detail</th></tr>
+    {% for l in logs %}
+    <tr>
+      <td class="mono">{{ l.created_at }}</td>
+      <td class="{{ 'red' if l.level=='error' else 'yellow' if l.level=='warning' else 'muted' }}">{{ l.level }}</td>
+      <td>{{ l.source }}</td>
+      <td class="mono">{{ l.event }}</td>
+      <td class="small">{{ l.detail or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<div class="empty">No log entries yet.</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Pop finish — dark — once</title>
+  <desc id="desc">Dark theme Full logo resolves crisply, with a slightly punchier orange accent landing and finish. Animation plays once and holds on the final logo.</desc>
+  <defs>
+    <filter id="softGlow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.99  0 1 0 0 0.18  0 0 1 0 0  0 0 0 0.75 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="blackLift" x="-12%" y="-12%" width="124%" height="124%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+
+    <linearGradient id="shineGradient" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.46" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.50" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.54" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="logoClip">
+      <path d="M 717.00 205.00 L 819.00 205.00 L 819.00 307.00 L 922.00 307.00 L 922.00 717.00 L 819.00 717.00 L 819.00 819.00 L 717.00 819.00 L 717.00 922.00 L 467.25 921.93 C330.56,921.90 219.49,921.51 219.49,921.08 C219.49,921.08 219.49,921.08 219.50,921.08 C220.60,920.64 225.55,919.29 230.50,918.07 C271.77,907.91 303.66,870.10 306.68,827.75 L 307.30 819.00 L 717.00 819.00 L 717.00 717.00 L 819.00 717.00 L 819.00 307.00 L 717.00 307.00 L 717.00 205.00 L 205.00 205.00 L 205.00 716.70 L 196.25 717.32 C160.45,719.88 127.67,742.82 112.00,776.27 C107.91,785.00 104.00,797.66 104.00,802.17 C104.00,803.66 103.55,805.16 103.00,805.50 C103.00,805.50 103.00,805.50 103.00,805.50 C102.33,805.50 102.08,688.57 102.25,454.31 L 102.50 102.50 L 409.75 102.25 L 717.00 102.00 ZM 614.00 614.00 L 614.00 717.00 L 307.00 717.00 L 307.00 307.00 L 614.00 307.00 L 614.00 410.00 L 717.00 410.00 L 717.00 614.00 ZM 614.00 614.00 L 614.00 410.00 L 410.00 410.00 L 410.00 614.00 Z"/>
+      <path d="M 306.66 810.74 L 307.30 819.00 L 307.30 819.00 L 306.68 827.75 C303.66,870.10 271.77,907.91 230.50,918.07 C225.55,919.29 220.60,920.64 219.50,921.08 C219.49,921.08 219.49,921.08 219.49,921.08 C219.49,921.18 225.70,921.28 236.98,921.38 C210.52,921.24 194.47,921.08 193.00,920.92 C171.72,918.62 148.25,907.33 133.00,892.06 C115.67,874.71 105.47,853.03 102.98,828.25 C102.23,820.72 101.99,710.47 102.20,460.00 L 102.50 102.50 L 102.25 454.31 C102.08,688.57 102.33,805.50 103.00,805.50 C103.00,805.50 103.00,805.50 103.00,805.50 C103.55,805.16 104.00,803.66 104.00,802.17 C104.00,797.66 107.91,785.00 112.00,776.27 C127.67,742.82 160.45,719.88 196.25,717.32 L 205.00 716.70 L 205.00 716.70 L 213.65 717.37 C243.17,719.64 272.49,736.68 289.19,761.28 C298.76,775.38 305.38,794.12 306.66,810.74 Z"/>
+    </clipPath>
+
+    <mask id="wipeMask">
+      <rect width="1024" height="1024" fill="black"/>
+      <rect id="maskReveal" x="110" y="190" width="0" height="650" rx="10" fill="white"/>
+    </mask>
+
+    <style>
+      :root {
+        --ink: #ffffff;
+        --accent: #FD2E00;
+      }
+      #logo { transform-origin: 512px 512px; }
+      #blackMark {
+        fill: var(--ink);
+        stroke: var(--ink);
+        stroke-width: 18;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        stroke-dasharray: 1000;
+      }
+      #orangeMark, #orangeGhost { fill: var(--accent); transform-box: fill-box; transform-origin: center; }
+      #shine { clip-path: url(#logoClip); mix-blend-mode: screen; opacity: 0; }
+      #spark { fill: var(--accent); filter: url(#softGlow); transform-origin: 205px 820px; opacity: 0; }
+      #ghostTrail { fill: var(--accent); opacity: 0; filter: blur(10px); transform-box: fill-box; transform-origin: center; }
+      
+      #logo { animation: v4Logo 3600ms cubic-bezier(.2,.9,.2,1) 1 both; }
+      #blackMark { animation: v4Black 3600ms cubic-bezier(.55,0,.2,1) 1 both; }
+      #orangeMark { animation: v4Dot 3600ms cubic-bezier(.18,.92,.22,1) 1 both; }
+      #ghostTrail { animation: v4Ghost 3600ms ease-out 1 both; }
+      #shine { animation: v4Shine 3600ms ease-in-out 1 both; }
+      #spark { animation: v4Spark 3600ms ease-out 1 both; }
+      @keyframes v4Black {
+        0%   { opacity: 0; stroke-dashoffset: 1000; fill-opacity: 0; }
+        14%  { opacity: 1; }
+        42%  { stroke-dashoffset: 0; fill-opacity: 0; }
+        52%  { fill-opacity: 1; transform: scale(1); }
+        60%  { transform: scale(1.012); }
+        72%,100% { stroke-dashoffset: 0; fill-opacity: 1; opacity: 1; transform: scale(1); }
+      }
+      @keyframes v4Dot {
+        0%,40% { opacity: 0; transform: translate(-110px,110px) scale(.7); }
+        50%    { opacity: 1; transform: translate(26px,-14px) scale(1.12); filter: url(#softGlow); }
+        58%    { transform: translate(-12px,8px) scale(.97); }
+        66%    { transform: translate(6px,-4px) scale(1.01); }
+        76%,100% { transform: translate(0,0) scale(1); opacity: 1; }
+      }
+      @keyframes v4Ghost {
+        0%,38% { opacity: 0; transform: translate(-130px,130px) scale(.66); }
+        48%    { opacity: .24; transform: translate(30px,-20px) scale(1.16); }
+        57%,100% { opacity: 0; transform: translate(0,0) scale(1); }
+      }
+      @keyframes v4Shine {
+        0%,58% { opacity: 0; transform: translateX(-900px) skewX(-18deg); }
+        65%    { opacity: .8; }
+        76%,100% { opacity: 0; transform: translateX(920px) skewX(-18deg); }
+      }
+      @keyframes v4Spark {
+        0%,43% { opacity: 0; transform: scale(.32); }
+        49%    { opacity: .85; transform: scale(1); }
+        61%,100% { opacity: 0; transform: scale(1.25); }
+      }
+      @keyframes v4Logo {
+        0% { transform: scale(.94); opacity: 0; }
+        18% { opacity: 1; }
+        56% { transform: scale(1.015); }
+        72%,100% { transform: scale(1); opacity: 1; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #logo, #blackMark, #orangeMark, #shine, #spark, #maskReveal, #ghostTrail { animation: none !important; }
+        #blackMark { stroke-dashoffset: 0; fill-opacity: 1; opacity: 1; mask: none; }
+        #orangeMark { opacity: 1; transform: none; }
+        #shine, #spark, #ghostTrail { opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <g id="logo" filter="url(#blackLift)">
+    <path id="blackMark" pathLength="1000" d="M 717.00 205.00 L 819.00 205.00 L 819.00 307.00 L 922.00 307.00 L 922.00 717.00 L 819.00 717.00 L 819.00 819.00 L 717.00 819.00 L 717.00 922.00 L 467.25 921.93 C330.56,921.90 219.49,921.51 219.49,921.08 C219.49,921.08 219.49,921.08 219.50,921.08 C220.60,920.64 225.55,919.29 230.50,918.07 C271.77,907.91 303.66,870.10 306.68,827.75 L 307.30 819.00 L 717.00 819.00 L 717.00 717.00 L 819.00 717.00 L 819.00 307.00 L 717.00 307.00 L 717.00 205.00 L 205.00 205.00 L 205.00 716.70 L 196.25 717.32 C160.45,719.88 127.67,742.82 112.00,776.27 C107.91,785.00 104.00,797.66 104.00,802.17 C104.00,803.66 103.55,805.16 103.00,805.50 C103.00,805.50 103.00,805.50 103.00,805.50 C102.33,805.50 102.08,688.57 102.25,454.31 L 102.50 102.50 L 409.75 102.25 L 717.00 102.00 ZM 614.00 614.00 L 614.00 717.00 L 307.00 717.00 L 307.00 307.00 L 614.00 307.00 L 614.00 410.00 L 717.00 410.00 L 717.00 614.00 ZM 614.00 614.00 L 614.00 410.00 L 410.00 410.00 L 410.00 614.00 Z"/>
+    <path id="ghostTrail" d="M 306.66 810.74 L 307.30 819.00 L 307.30 819.00 L 306.68 827.75 C303.66,870.10 271.77,907.91 230.50,918.07 C225.55,919.29 220.60,920.64 219.50,921.08 C219.49,921.08 219.49,921.08 219.49,921.08 C219.49,921.18 225.70,921.28 236.98,921.38 C210.52,921.24 194.47,921.08 193.00,920.92 C171.72,918.62 148.25,907.33 133.00,892.06 C115.67,874.71 105.47,853.03 102.98,828.25 C102.23,820.72 101.99,710.47 102.20,460.00 L 102.50 102.50 L 102.25 454.31 C102.08,688.57 102.33,805.50 103.00,805.50 C103.00,805.50 103.00,805.50 103.00,805.50 C103.55,805.16 104.00,803.66 104.00,802.17 C104.00,797.66 107.91,785.00 112.00,776.27 C127.67,742.82 160.45,719.88 196.25,717.32 L 205.00 716.70 L 205.00 716.70 L 213.65 717.37 C243.17,719.64 272.49,736.68 289.19,761.28 C298.76,775.38 305.38,794.12 306.66,810.74 Z"/>
+    <circle id="spark" cx="204" cy="820" r="72"/>
+    <path id="orangeMark" d="M 306.66 810.74 L 307.30 819.00 L 307.30 819.00 L 306.68 827.75 C303.66,870.10 271.77,907.91 230.50,918.07 C225.55,919.29 220.60,920.64 219.50,921.08 C219.49,921.08 219.49,921.08 219.49,921.08 C219.49,921.18 225.70,921.28 236.98,921.38 C210.52,921.24 194.47,921.08 193.00,920.92 C171.72,918.62 148.25,907.33 133.00,892.06 C115.67,874.71 105.47,853.03 102.98,828.25 C102.23,820.72 101.99,710.47 102.20,460.00 L 102.50 102.50 L 102.25 454.31 C102.08,688.57 102.33,805.50 103.00,805.50 C103.00,805.50 103.00,805.50 103.00,805.50 C103.55,805.16 104.00,803.66 104.00,802.17 C104.00,797.66 107.91,785.00 112.00,776.27 C127.67,742.82 160.45,719.88 196.25,717.32 L 205.00 716.70 L 205.00 716.70 L 213.65 717.37 C243.17,719.64 272.49,736.68 289.19,761.28 C298.76,775.38 305.38,794.12 306.66,810.74 Z"/>
+    <g id="shine"><rect x="-320" y="70" width="260" height="900" fill="url(#shineGradient)"/></g>
+    
+  </g>
+</svg>

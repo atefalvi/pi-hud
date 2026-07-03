@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pi-hud · Final Observatory Mockups</title>
+<style>
+  :root {
+    --bg-0: #0A0C10;
+    --bg-1: #0F1318;
+    --bg-2: #161B22;
+    --bg-3: #1D242E;
+    --border-1: #1F262F;
+    --border-2: #2E3744;
+    --text-1: #EDEFF3;
+    --text-2: #A8B1BD;
+    --text-3: #858E99;
+    --text-on-accent: #05070A;
+    --accent: #FF5C38;
+    --accent-subtle: rgba(255,92,56,.12);
+    --success: #3ECF8E;
+    --warning: #F5B83D;
+    --danger: #F0564A;
+    --info: #5CA7FF;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --font-display: Georgia, "Times New Roman", serif;
+    --font-text: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    color: var(--text-1);
+    background:
+      radial-gradient(circle at 15% -10%, rgba(255,92,56,.09), transparent 28rem),
+      radial-gradient(circle at 85% 5%, rgba(92,167,255,.07), transparent 26rem),
+      linear-gradient(180deg, var(--bg-0) 0%, #080A0D 100%);
+    font-family: var(--font-text);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { width: min(1400px, calc(100vw - 40px)); margin: 0 auto; padding: var(--space-7) 0 80px; }
+  h1,h2,h3,p { margin: 0; }
+  .hero,.section-head { display: grid; grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr); gap: var(--space-6); align-items: end; }
+  .hero { padding-bottom: var(--space-6); border-bottom: 1px solid var(--border-1); }
+  .kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: var(--space-3); }
+  h1 { font-family: var(--font-display); font-size: clamp(42px,6vw,84px); line-height: 1.02; letter-spacing: -.025em; font-weight: 560; max-width: 960px; text-wrap: balance; }
+  .lead { color: var(--text-2); line-height: 1.65; font-size: 17px; max-width: 58ch; }
+  .note-card { border: 1px solid var(--border-1); border-radius: var(--radius-lg); background: var(--bg-1); padding: var(--space-5); }
+  .note-card p { color: var(--text-2); line-height: 1.55; font-size: 14px; }
+  .brand { display: flex; gap: 14px; align-items: center; margin-bottom: var(--space-4); }
+  .mark { width: 46px; height: 46px; border: 2px solid var(--text-1); border-radius: 6px; position: relative; }
+  .mark::before { content:""; position:absolute; inset:10px; border:2px solid var(--text-1); border-radius:3px; }
+  .mark::after { content:""; position:absolute; width:8px; height:8px; left:-4px; bottom:5px; border-radius:50%; background:#FD2E00; box-shadow:0 0 0 4px var(--bg-1); }
+  .wordmark { font-family: var(--font-mono); font-size: 13px; line-height: 1.25; letter-spacing: .16em; text-transform: uppercase; }
+  .section { margin-top: var(--space-7); }
+  .section-head { margin-bottom: var(--space-5); }
+  .section-head h2 { font-family: var(--font-display); font-size: clamp(32px,4vw,52px); font-weight: 560; line-height:1.08; letter-spacing:-.015em; }
+  .section-head p { color: var(--text-2); font-size: 15px; line-height: 1.6; }
+  .hud-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(390px,1fr)); gap: var(--space-5); }
+  .hud-card,.frame { border:1px solid var(--border-1); border-radius:var(--radius-lg); background:var(--bg-1); overflow:hidden; }
+  .hud-head { display:flex; justify-content:space-between; align-items:center; padding:var(--space-4) var(--space-4) 0; }
+  .hud-head h3 { font-size:15px; font-weight:650; letter-spacing:-.015em; }
+  .meta { font-family:var(--font-mono); font-size:12px; color:var(--text-3); }
+  .stage { display:grid; place-items:center; min-height:250px; margin:var(--space-4); border:1px solid var(--border-1); border-radius:var(--radius-md); background:linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.025) 1px,transparent 1px),#090B0F; background-size:16px 16px; }
+  .caption { border-top:1px solid var(--border-1); color:var(--text-3); padding:var(--space-3) var(--space-4) var(--space-4); font-size:13px; line-height:1.55; }
+  .hud-screen { width:320px; height:160px; border:3px solid var(--border-2); border-radius:10px; background:#05070A; position:relative; overflow:hidden; padding:10px 12px; font-family:var(--font-mono); color:var(--text-1); box-shadow:0 16px 40px rgba(0,0,0,.35); }
+  .hud-screen::before { content:""; position:absolute; inset:0; opacity:.16; pointer-events:none; background:linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:8px 8px; }
+  .hud-content { position:relative; z-index:1; height:100%; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .host { font-size:18px; font-weight:800; letter-spacing:-.035em; }
+  .temp { font-size:17px; font-weight:800; }
+  .green{color:var(--success)} .yellow{color:var(--warning)} .red{color:var(--danger)} .blue{color:var(--info)} .ember{color:var(--accent)}
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px rgba(255,92,56,.16),0 0 12px rgba(255,92,56,.75); }
+  .metric { display:grid; grid-template-columns:42px 1fr 42px; gap:8px; align-items:center; margin-top:12px; font-size:14px; font-weight:700; }
+  .bar { height:10px; border-radius:999px; background:var(--bg-2); border:1px solid var(--border-1); overflow:hidden; }
+  .fill { height:100%; width:var(--w); background:var(--c); }
+  .badge-pile { position:absolute; left:12px; right:12px; bottom:10px; display:flex; gap:7px; }
+  .screen-badge { flex:1; border-radius:999px; padding:5px 6px; display:flex; justify-content:center; align-items:center; gap:5px; border:1px solid color-mix(in srgb,var(--state),transparent 58%); background:color-mix(in srgb,var(--state),#05070A 86%); font-size:10.5px; letter-spacing:.05em; font-weight:850; }
+  .screen-badge::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--state); }
+  .alert { padding:0; }
+  .alert .hud-content { display:grid; grid-template-columns:12px 1fr; }
+  .rail { background:var(--state); }
+  .alert-body { padding:11px 12px; position:relative; min-width:0; }
+  .alert-top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
+  .alert-type { display:flex; align-items:center; gap:7px; color:var(--state); text-transform:uppercase; letter-spacing:.08em; font-size:12px; font-weight:850; }
+  .glyph { width:22px; height:22px; display:grid; place-items:center; border-radius:6px; border:1px solid color-mix(in srgb,var(--state),transparent 45%); background:color-mix(in srgb,var(--state),transparent 87%); color:var(--state); font-weight:900; }
+  .pin { border-radius:999px; padding:3px 6px; font-size:10px; font-weight:850; letter-spacing:.08em; border:1px solid color-mix(in srgb,var(--state),transparent 55%); background:color-mix(in srgb,var(--state),transparent 88%); color:color-mix(in srgb,var(--state),white 24%); }
+  .alert-title { font-size:22px; font-weight:900; letter-spacing:-.07em; line-height:1; max-width:252px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .alert-message { margin-top:7px; color:var(--text-2); font-size:13.5px; line-height:1.2; max-height:34px; overflow:hidden; }
+  .alert-footer { position:absolute; left:12px; right:12px; bottom:9px; display:flex; justify-content:space-between; color:var(--text-3); font-size:10.5px; font-weight:750; }
+  .queue-block { margin-top:14px; display:grid; gap:9px; }
+  .queue-group { display:grid; grid-template-columns:8px 1fr auto; align-items:center; gap:9px; font-size:13.5px; font-weight:760; }
+  .queue-rail { width:8px; height:23px; border-radius:999px; background:var(--state); }
+  .queue-count { border-radius:999px; padding:3px 8px; font-size:11px; font-weight:850; border:1px solid color-mix(in srgb,var(--state),transparent 60%); background:color-mix(in srgb,var(--state),transparent 90%); color:color-mix(in srgb,var(--state),white 20%); }
+  .stack{display:grid;gap:var(--space-6)} .browser{height:42px;border-bottom:1px solid var(--border-1);background:color-mix(in srgb,var(--bg-1) 88%,var(--bg-0));display:flex;align-items:center;gap:8px;padding:0 var(--space-4)}
+  .browser-dot{width:10px;height:10px;border-radius:50%;background:var(--border-2)} .url{flex:1;margin-left:10px;height:24px;border-radius:999px;background:var(--bg-0);border:1px solid var(--border-1);color:var(--text-3);font-family:var(--font-mono);font-size:12px;display:flex;align-items:center;padding:0 12px}
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:720px}.side{background:var(--bg-0);border-right:1px solid var(--border-1);padding:var(--space-5)}
+  .pi-brand{display:flex;gap:12px;align-items:center;margin-bottom:var(--space-6)}.pi-mark{width:34px;height:34px;border-radius:8px;border:1px solid var(--border-2);position:relative;display:grid;place-items:center;font-family:var(--font-mono);font-weight:900}.pi-mark::after{content:"";position:absolute;width:7px;height:7px;left:-3px;bottom:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg-0)}
+  .pi-name{display:grid;gap:2px}.pi-name strong{font-size:18px;letter-spacing:-.04em}.pi-name span{color:var(--text-3);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  .nav{display:grid;gap:6px}.nav a{text-decoration:none;color:var(--text-2);padding:10px 11px;border-radius:var(--radius-md);display:flex;gap:9px;align-items:center;font-size:14px;font-weight:560}.nav a.active{color:var(--text-1);background:var(--accent-subtle);border:1px solid color-mix(in srgb,var(--accent),transparent 58%)}
+  .panel{background:radial-gradient(circle at 88% 0%,rgba(255,92,56,.07),transparent 22rem),var(--bg-0);padding:var(--space-6)}
+  .page-top{display:grid;grid-template-columns:1fr auto;gap:var(--space-5);align-items:start;padding-bottom:var(--space-5);border-bottom:1px solid var(--border-1);margin-bottom:var(--space-5)}
+  .page-top h2{font-family:var(--font-display);font-size:42px;line-height:1.08;font-weight:560;letter-spacing:-.015em}.page-top p{color:var(--text-2);margin-top:7px;line-height:1.55;max-width:56ch}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:end}.btn{height:40px;border-radius:var(--radius-md);padding:0 14px;font-weight:560;color:var(--text-1);background:transparent;border:1px solid var(--border-2)}.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger),transparent 55%);background:color-mix(in srgb,var(--danger),transparent 90%)}
+  .dashboard-grid,.message-layout{display:grid;grid-template-columns:1.15fr .85fr;gap:var(--space-5)}.card{border:1px solid var(--border-1);border-radius:var(--radius-lg);background:var(--bg-1);padding:var(--space-5)}.card h3{font-size:18px;letter-spacing:-.015em;margin-bottom:var(--space-4)}
+  .display-preview{min-height:240px;border-radius:var(--radius-md);border:1px solid var(--border-1);background:#05070A;display:grid;place-items:center}.display-preview .hud-screen{transform:scale(.88)}
+  .chip-pile{display:flex;flex-wrap:wrap;gap:8px}.chip{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 10px;border:1px solid color-mix(in srgb,var(--state),transparent 65%);background:color-mix(in srgb,var(--state),var(--bg-1) 88%);color:var(--text-1);font-size:13px;font-weight:650}.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--state)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-5)}.stat{border:1px solid var(--border-1);border-radius:var(--radius-md);background:var(--bg-0);padding:var(--space-4)}.stat .label{color:var(--text-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;font-size:11px;margin-bottom:7px}.stat .value{font-family:var(--font-display);font-size:34px;line-height:1;letter-spacing:-.02em}
+  .callout{margin-top:var(--space-4);border-radius:var(--radius-md);padding:var(--space-4);border:1px solid color-mix(in srgb,var(--warning),transparent 62%);background:color-mix(in srgb,var(--warning),transparent 90%);color:#FBE0A1;line-height:1.55;font-size:14px}
+  .message-list .row-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:14px 0;border-top:1px solid var(--border-1)}.message-list .row-item:first-child{border-top:0;padding-top:0}
+  .sev{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 8px;border:1px solid color-mix(in srgb,var(--state),transparent 62%);background:color-mix(in srgb,var(--state),transparent 90%);color:color-mix(in srgb,var(--state),white 24%);font-size:12px;font-weight:650}.sev::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--state)}
+  .title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.small{color:var(--text-3);font-size:12px}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3) var(--space-4);margin-top:var(--space-4)}.field{border:1px solid var(--border-1);border-radius:var(--radius-md);background:var(--bg-0);padding:12px}.field .label{color:var(--text-3);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}.field .value{color:var(--text-1);font-size:14px;line-height:1.45}.field.span-2{grid-column:span 2}
+  .timeline{margin-top:var(--space-4);border-left:1px solid var(--border-2);padding-left:var(--space-4);display:grid;gap:var(--space-3)}.t-item{position:relative}.t-item::before{content:"";position:absolute;left:calc(-1 * var(--space-4) - 4px);top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent)}.t-item strong{display:block;margin-bottom:4px}
+  .code{margin-top:var(--space-4);padding:14px;border-radius:var(--radius-md);background:var(--bg-2);border:1px solid var(--border-1);color:var(--text-2);font-family:var(--font-mono);font-size:12px;line-height:1.65;white-space:pre-wrap}
+  @media(max-width:980px){.hero,.section-head,.app,.page-top,.dashboard-grid,.message-layout{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--border-1)}.btn-row{justify-content:start}.stats,.detail-grid{grid-template-columns:1fr}.field.span-2{grid-column:span 1}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+  <div>
+    <div class="kicker">Observatory system · final build reference</div>
+    <h1>pi-hud final screen and frontend reference.</h1>
+    <p class="lead">The pending queue screen now only shows the grouped queue and counts. The frontend includes a complete message center and DNS update detail view.</p>
+  </div>
+  <aside class="note-card">
+    <div class="brand"><div class="mark"></div><div class="wordmark">DATA<br>DREAMER</div></div>
+    <p>Design follows DataDreamer Observatory: dark-first surfaces, hairline rules, ember accent, precise metadata, and compact instrument-panel density.</p>
+  </aside>
+</header>
+
+<section class="section">
+  <div class="section-head">
+    <div><div class="kicker">Physical HUD</div><h2>Final 160×80 screen states.</h2></div>
+    <p>These are the screen states the agent should implement first. Queue summary has no bottom badges because space is tight.</p>
+  </div>
+
+  <div class="hud-grid">
+    <article class="hud-card">
+      <div class="hud-head"><h3>01 · Normal status</h3><span class="meta">default</span></div>
+      <div class="stage"><div class="hud-screen"><div class="hud-content">
+        <div class="row"><div class="host">rack-pi</div><div class="row"><span class="temp green">52°</span><span class="live-dot"></span></div></div>
+        <div class="metric"><span>CPU</span><div class="bar"><div class="fill" style="--w:34%;--c:var(--success)"></div></div><span class="green">34%</span></div>
+        <div class="metric"><span>RAM</span><div class="bar"><div class="fill" style="--w:61%;--c:var(--warning)"></div></div><span class="yellow">61%</span></div>
+        <div class="badge-pile"><span class="screen-badge" style="--state:var(--success)">DNS</span><span class="screen-badge" style="--state:var(--success)">API</span><span class="screen-badge" style="--state:var(--success)">PWR</span></div>
+      </div></div></div>
+      <p class="caption">Normal screen uses service badges only because it has room and there is no alert content.</p>
+    </article>
+
+    <article class="hud-card">
+      <div class="hud-head"><h3>02 · DNS updated</h3><span class="meta">pinned success</span></div>
+      <div class="stage"><div class="hud-screen alert" style="--state:var(--success)"><div class="hud-content">
+        <div class="rail"></div><div class="alert-body">
+          <div class="alert-top"><span class="alert-type"><span class="glyph">✓</span> Success</span><span class="pin">PIN</span></div>
+          <div class="alert-title">DNS Updated</div>
+          <div class="alert-message">A 203.0.113.42 → 198.51.100.27</div>
+          <div class="alert-footer"><span>home.example.com</span><span>tap clear</span></div>
+        </div>
+      </div></div></div>
+      <p class="caption">Screen shows old IP to new IP. Full details are available in the web UI.</p>
+    </article>
+
+    <article class="hud-card">
+      <div class="hud-head"><h3>03 · Pending queue</h3><span class="meta">grouped count only</span></div>
+      <div class="stage"><div class="hud-screen"><div class="hud-content">
+        <div class="row"><div class="host">4 pending</div><span class="live-dot"></span></div>
+        <div class="queue-block">
+          <div class="queue-group" style="--state:var(--danger)"><span class="queue-rail"></span><span>Error alerts</span><span class="queue-count">1</span></div>
+          <div class="queue-group" style="--state:var(--accent)"><span class="queue-rail"></span><span>Power alerts</span><span class="queue-count">2</span></div>
+          <div class="queue-group" style="--state:var(--info)"><span class="queue-rail"></span><span>Info alerts</span><span class="queue-count">1</span></div>
+        </div>
+      </div></div></div>
+      <p class="caption">No bottom badge pile on the pending screen. The grouped rows and counts are the whole screen.</p>
+    </article>
+
+    <article class="hud-card">
+      <div class="hud-head"><h3>04 · DNS failed</h3><span class="meta">error</span></div>
+      <div class="stage"><div class="hud-screen alert" style="--state:var(--danger)"><div class="hud-content">
+        <div class="rail"></div><div class="alert-body">
+          <div class="alert-top"><span class="alert-type"><span class="glyph">×</span> Error</span><span class="pin">P9</span></div>
+          <div class="alert-title">DNS Failed</div>
+          <div class="alert-message">Cloudflare API rejected update request.</div>
+          <div class="alert-footer"><span>pi-dns-sync</span><span>view detail</span></div>
+        </div>
+      </div></div></div>
+      <p class="caption">Error state remains clear and compact with full detail available in Messages.</p>
+    </article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div><div class="kicker">Frontend</div><h2>Message center and DNS detail.</h2></div>
+    <p>The frontend is where users can read every message fully, inspect raw payloads, clear alerts, and manage app tokens.</p>
+  </div>
+
+  <div class="stack">
+    <article class="frame">
+      <div class="browser"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="url">http://pi-hud.local:8765/</div></div>
+      <div class="app">
+        <aside class="side">
+          <div class="pi-brand"><div class="pi-mark">π</div><div class="pi-name"><strong>pi-hud</strong><span>Observatory</span></div></div>
+          <nav class="nav"><a class="active" href="#">▣ Dashboard</a><a href="#">◇ Messages</a><a href="#">◈ Tokens</a><a href="#">◎ Settings</a><a href="#">☰ Logs</a><a href="#">{} API</a></nav>
+        </aside>
+        <section class="panel">
+          <div class="page-top"><div><div class="kicker">Current instrument</div><h2>Dashboard</h2><p>Shows the physical display preview plus a concise detail card for the active alert.</p></div><div class="btn-row"><button class="btn danger">Clear current</button><button class="btn">Clear all</button><button class="btn primary">Send test</button></div></div>
+          <div class="dashboard-grid">
+            <div class="card"><h3>Current display</h3><div class="display-preview"><div class="hud-screen alert" style="--state:var(--success)"><div class="hud-content"><div class="rail"></div><div class="alert-body"><div class="alert-top"><span class="alert-type"><span class="glyph">✓</span> Success</span><span class="pin">PIN</span></div><div class="alert-title">DNS Updated</div><div class="alert-message">A 203.0.113.42 → 198.51.100.27</div><div class="alert-footer"><span>home.example.com</span><span>tap clear</span></div></div></div></div></div></div>
+            <div class="card"><h3>Active alert summary</h3><div class="chip-pile"><span class="chip" style="--state:var(--success)">DNS</span><span class="chip" style="--state:var(--success)">API</span><span class="chip" style="--state:var(--accent)">PWR</span></div><div class="stats"><div class="stat"><div class="label">Old IP</div><div class="value blue" style="font-size:26px">203.0.113.42</div></div><div class="stat"><div class="label">New IP</div><div class="value green" style="font-size:26px">198.51.100.27</div></div><div class="stat"><div class="label">Record</div><div class="value ember" style="font-size:26px">A</div></div></div><div class="callout">home.example.com was updated because the WAN IP changed. The message remains pinned on the physical display until cleared.</div></div>
+          </div>
+        </section>
+      </div>
+    </article>
+
+    <article class="frame">
+      <div class="browser"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span><div class="url">http://pi-hud.local:8765/messages</div></div>
+      <div class="app">
+        <aside class="side">
+          <div class="pi-brand"><div class="pi-mark">π</div><div class="pi-name"><strong>pi-hud</strong><span>Observatory</span></div></div>
+          <nav class="nav"><a href="#">▣ Dashboard</a><a class="active" href="#">◇ Messages</a><a href="#">◈ Tokens</a><a href="#">◎ Settings</a><a href="#">☰ Logs</a><a href="#">{} API</a></nav>
+        </aside>
+        <section class="panel">
+          <div class="page-top"><div><div class="kicker">Message center</div><h2>Messages</h2><p>The left side gives the message list. The right side gives full details for the selected message.</p></div><div class="btn-row"><button class="btn">Export CSV</button><button class="btn primary">Replay test</button></div></div>
+          <div class="message-layout">
+            <div class="card message-list">
+              <h3>All messages</h3>
+              <div class="row-item"><span class="sev" style="--state:var(--success)">success</span><div><div class="title-line"><strong>DNS Updated</strong><span class="small">home.example.com</span></div><div class="small">pi-dns-sync · pinned · 2 min ago</div></div><button class="btn">Open</button></div>
+              <div class="row-item"><span class="sev" style="--state:var(--danger)">error</span><div><div class="title-line"><strong>DNS Failed</strong><span class="small">home.example.com</span></div><div class="small">pi-dns-sync · pinned · Jun 30</div></div><button class="btn">Open</button></div>
+              <div class="row-item"><span class="sev" style="--state:var(--accent)">caution</span><div><div class="title-line"><strong>Power Dip</strong><span class="small">vcgencmd</span></div><div class="small">system · pinned · 1 hour ago</div></div><button class="btn">Open</button></div>
+              <div class="row-item"><span class="sev" style="--state:var(--info)">note</span><div><div class="title-line"><strong>Backup Done</strong><span class="small">tank-backup</span></div><div class="small">truenas · auto-expired · yesterday</div></div><button class="btn">Open</button></div>
+            </div>
+            <div class="card">
+              <h3>Selected message detail</h3>
+              <div class="title-line" style="margin-bottom:12px"><span class="sev" style="--state:var(--success)">success</span><strong style="font-size:20px">DNS Updated</strong><span class="small">Pinned on display</span></div>
+              <div class="detail-grid">
+                <div class="field"><div class="label">Source</div><div class="value">pi-dns-sync</div></div>
+                <div class="field"><div class="label">Created</div><div class="value">2026-07-02 14:17:04</div></div>
+                <div class="field"><div class="label">Host</div><div class="value">home.example.com</div></div>
+                <div class="field"><div class="label">Record type</div><div class="value">A</div></div>
+                <div class="field"><div class="label">Previous value</div><div class="value">203.0.113.42</div></div>
+                <div class="field"><div class="label">Updated value</div><div class="value">198.51.100.27</div></div>
+                <div class="field span-2"><div class="label">Message body</div><div class="value">WAN IP changed. Cloudflare DNS record for <strong>home.example.com</strong> was updated successfully from <strong>203.0.113.42</strong> to <strong>198.51.100.27</strong>.</div></div>
+              </div>
+              <div class="timeline">
+                <div class="t-item"><strong>14:16:59 · Detection</strong><span class="small">pi-dns-sync detected a WAN IP change on the host Pi.</span></div>
+                <div class="t-item"><strong>14:17:01 · Cloudflare request</strong><span class="small">PATCH request sent to update the A record.</span></div>
+                <div class="t-item"><strong>14:17:03 · Cloudflare response</strong><span class="small">API confirmed the new value 198.51.100.27.</span></div>
+                <div class="t-item"><strong>14:17:04 · HUD dispatch</strong><span class="small">Message was written to SQLite and pinned on the physical display.</span></div>
+              </div>
+              <div class="code">{
+  "source": "pi-dns-sync",
+  "type": "success",
+  "title": "DNS Updated",
+  "host": "home.example.com",
+  "record_type": "A",
+  "previous_value": "203.0.113.42",
+  "updated_value": "198.51.100.27",
+  "pinned": true
+}</div>
+              <div class="btn-row" style="justify-content:start;margin-top:16px"><button class="btn danger">Clear on display</button><button class="btn">Copy JSON</button></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </article>
+  </div>
+</section>
+</main>
+</body>
+</html>

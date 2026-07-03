@@ -1,0 +1,9 @@
+services:
+  pi-dns-sync:
+    image: ghcr.io/atefalvi/pi-dns-sync:latest
+    container_name: pi-dns-sync
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      HUD_URL: "http://127.0.0.1:8765"
+      HUD_TOKEN: "your-token"

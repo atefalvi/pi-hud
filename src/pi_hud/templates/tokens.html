@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-top">
+  <div>
+    <div class="kicker">Access</div>
+    <h2>App tokens</h2>
+    <p>One token per app. The full token is shown only once at creation — store only its hash.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Create token</h3>
+    <form class="stack" method="post" action="/tokens">
+      <label>App name
+        <input name="name" placeholder="pi-dns-sync" maxlength="64" required>
+      </label>
+      <div><button class="btn primary" type="submit">Create token</button></div>
+    </form>
+    {% if new_token %}
+    <div class="token-reveal">
+      <div class="small" style="margin-bottom:8px">Token for <strong>{{ new_name }}</strong> — copy it now, it will not be shown again:</div>
+      <code>{{ new_token }}</code>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Existing tokens</h3>
+    {% if tokens %}
+    <table>
+      <tr><th>Name</th><th>Prefix</th><th>Last used</th><th>Status</th><th></th></tr>
+      {% for t in tokens %}
+      <tr>
+        <td style="color:var(--text-1)">{{ t.name }}</td>
+        <td class="mono">{{ t.token_prefix }}…</td>
+        <td class="mono">{{ t.last_used_at or 'never' }}</td>
+        <td>{% if t.is_active %}<span class="green">active</span>{% else %}<span class="muted">revoked</span>{% endif %}</td>
+        <td>{% if t.is_active %}
+          <form method="post" action="/tokens/{{ t.id }}/revoke" onsubmit="return confirm('Revoke {{ t.name }}?')">
+            <button class="btn danger" type="submit">Revoke</button>
+          </form>
+        {% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+      <div class="empty">No tokens yet. Create one for pi-dns-sync.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

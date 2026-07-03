@@ -1,0 +1,16 @@
+{% macro state_var(type) -%}
+{%- if type in ('success',) -%}var(--success)
+{%- elif type in ('error','critical') -%}var(--danger)
+{%- elif type in ('warning',) -%}var(--warning)
+{%- elif type in ('caution',) -%}var(--accent)
+{%- else -%}var(--info)
+{%- endif -%}
+{%- endmacro %}
+
+{% macro sev(type) -%}
+<span class="sev" style="--state:{{ state_var(type) }}">{{ type }}</span>
+{%- endmacro %}
+
+{% macro pin(m) -%}
+{%- if m.pinned and m.status == 'active' -%}<span class="small">Pinned on display</span>{%- endif -%}
+{%- endmacro %}

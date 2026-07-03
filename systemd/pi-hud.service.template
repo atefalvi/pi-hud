@@ -1,0 +1,18 @@
+[Unit]
+Description=pi-hud display and notification hub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__USER__
+WorkingDirectory=/opt/pi-hud
+Environment=PYTHONUNBUFFERED=1
+Environment=PI_HUD_CONFIG=/etc/pi-hud/config.ini
+ExecStart=/opt/pi-hud/.venv/bin/python -m pi_hud.main
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
