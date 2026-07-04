@@ -168,9 +168,17 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
                         headers={"Cache-Control": "no-store"})
 
     # ---------------- Web UI ----------------
+    from . import __version__, metrics
+    device = {  # sidebar identity — which Pi am I looking at?
+        "hostname": metrics.hostname(),
+        "ip": metrics.lan_ip(),
+        "port": cfg.getint("api", "port"),
+        "version": __version__,
+    }
+
     def page(request, name, **ctx):
         lan = cfg.getbool("api", "lan_mode") or cfg.get("api", "host") == "0.0.0.0"
-        ctx.update(lan_mode=lan)
+        ctx.update(lan_mode=lan, device=device)
         return templates.TemplateResponse(request, name, ctx)
 
     @app.get("/", response_class=HTMLResponse)

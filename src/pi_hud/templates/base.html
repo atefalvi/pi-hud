@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pi-hud · {{ title|default('Observatory') }}</title>
+<title>{{ device.hostname if device else 'pi-hud' }} · pi-hud</title>
 <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
@@ -21,6 +21,13 @@
       <a href="/logs" class="{{ 'active' if nav=='logs' }}"><span class="glyph">☰</span> Logs</a>
       <a href="/docs" class="{{ 'active' if nav=='docs' }}"><span class="glyph">{}</span> API</a>
     </nav>
+    {% if device %}
+    <div class="side-foot">
+      <div class="side-host"><span class="dot">●</span> {{ device.hostname }}</div>
+      <div class="mono side-ip">{{ device.ip }}:{{ device.port }}</div>
+      <div class="small">pi-hud v{{ device.version }}{% if lan_mode %} · LAN{% endif %}</div>
+    </div>
+    {% endif %}
   </aside>
   <main class="panel">
     {% block content %}{% endblock %}

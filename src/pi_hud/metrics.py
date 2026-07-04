@@ -8,6 +8,18 @@ def hostname() -> str:
     return socket.gethostname().split(".")[0]
 
 
+def lan_ip() -> str:
+    """This machine's LAN IP (no packets sent; falls back to loopback)."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("192.168.0.1", 80))  # any address works; nothing is sent
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return "127.0.0.1"
+
+
 def temp_c() -> float | None:
     """CPU temperature. Reads the thermal zone directly (works on Pi without
     extra deps); falls back to psutil sensors."""

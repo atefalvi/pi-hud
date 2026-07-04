@@ -19,7 +19,12 @@ a{color:inherit}
 h1,h2,h3,p{margin:0}
 
 .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
-.side{background:var(--bg-0);border-right:1px solid var(--border-1);padding:var(--space-5)}
+.side{background:var(--bg-0);border-right:1px solid var(--border-1);padding:var(--space-5);display:flex;flex-direction:column}
+.side .nav{flex:1;align-content:start}
+.side-foot{margin-top:var(--space-5);padding-top:var(--space-4);border-top:1px solid var(--border-1);display:grid;gap:4px}
+.side-host{font-weight:650;font-size:15px;letter-spacing:-.02em}
+.side-host .dot{color:var(--accent)}
+.side-ip{color:var(--text-2);font-size:13px}
 .pi-brand{display:flex;gap:12px;align-items:center;margin-bottom:var(--space-6)}
 .pi-mark{width:34px;height:34px;border-radius:8px;border:1px solid var(--border-2);position:relative;display:grid;place-items:center;font-family:var(--font-mono);font-weight:900}
 .pi-mark::after{content:"";position:absolute;width:7px;height:7px;left:-3px;bottom:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg-0)}
