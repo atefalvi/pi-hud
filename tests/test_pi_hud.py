@@ -199,6 +199,40 @@ def test_health_has_version(client):
     assert "version" in j and "uptime_s" in j
 
 
+def test_settings_form_post(client, cfg):
+    # HTML form posts require python-multipart; this guards the dependency
+    r = client.post("/settings", data={"temp_warning_c": "60",
+                                       "power_event_pinning": "false"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert store.get_setting("temp_warning_c") == "60"
+
+
+def test_tokens_form_post(client, cfg):
+    name = "form-" + os.urandom(3).hex()
+    r = client.post("/tokens", data={"name": name})
+    assert r.status_code == 200
+    assert "ph_" in r.text  # one-time reveal rendered
+    tid = [t["id"] for t in auth.list_tokens() if t["name"] == name][0]
+    assert client.post(f"/tokens/{tid}/revoke",
+                       follow_redirects=False).status_code == 303
+    assert client.post(f"/tokens/{tid}/regenerate").status_code == 200
+
+
+def test_config_form_post(client, cfg, tmp_path):
+    # point the config at a temp file so the test doesn't rewrite the repo's ini
+    orig = cfg.path
+    cfg.path = str(tmp_path / "config.ini")
+    try:
+        r = client.post("/settings/config", data={"port": "8765", "lan_mode": "false",
+                                                  "rotation": "270", "bgr": "true"})
+        assert r.status_code == 200
+        assert "restarting" in r.text
+        assert (tmp_path / "config.ini").exists()
+    finally:
+        cfg.path = orig
+
+
 def test_pinned_survives_restart(cfg):
     store.clear_all()
     mid = store.create_message("a", "error", "persist", pinned=True, priority=9)

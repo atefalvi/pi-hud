@@ -49,6 +49,25 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
     app = FastAPI(title="pi-hud", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
 
+    @app.exception_handler(Exception)
+    async def unhandled(request: Request, exc: Exception):
+        # surface server errors in the Logs page instead of a bare 500
+        try:
+            store.log("error", "web", "unhandled_exception",
+                      f"{request.method} {request.url.path}: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+        if request.url.path.startswith("/api/") or request.method != "GET" and \
+                "application/json" in request.headers.get("content-type", ""):
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+        return HTMLResponse(
+            "<body style='background:#0A0C10;color:#EDEFF3;font-family:sans-serif;"
+            "display:grid;place-items:center;height:100vh'><div style='max-width:48ch'>"
+            f"<h2>Something broke</h2><p style='color:#A8B1BD'>{type(exc).__name__}: {exc}</p>"
+            "<p><a href='/logs' style='color:#FF5C38'>See Logs</a> · "
+            "<a href='/' style='color:#FF5C38'>Dashboard</a></p></div></body>",
+            status_code=500)
+
     def require_token(request: Request, authorization: str = Header(default="")):
         ip = request.client.host if request.client else "?"
         if _rate_limited(ip):

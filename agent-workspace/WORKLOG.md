@@ -1,5 +1,15 @@
 # WORKLOG
 
+## 2026-07-04 (fourth pass) — form saves 500'd: missing python-multipart
+
+- All HTML form saves (thresholds, tokens, config editor) returned 500: current
+  Starlette requires python-multipart for any request.form() parsing. Reproduced
+  locally with curl; added the dependency to pyproject/requirements.
+- Added regression tests for every form POST (settings, tokens create/revoke/
+  regenerate, config editor with temp-file redirect) — 23 tests passing.
+- Added a global exception handler: unhandled errors are logged to the DB (visible
+  on the Logs page) and render a styled error page with links, JSON for API paths.
+
 ## 2026-07-04 (third pass) — color fix, generic API, send-test
 
 - Panel showed orange as blue → red/blue channel swap: panel wants BGR order.
