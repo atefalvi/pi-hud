@@ -1,5 +1,18 @@
 # WORKLOG
 
+## 2026-07-04 (later) — root cause found: wrong pins; UX round
+
+- display_test showed no colors at all → user supplied the old *working* driver, whose
+  defaults are DC=25/RST=27/BL=24 (BCM). Handoff docs said 23/24/18 — docs were wrong.
+  Defaults corrected everywhere + README wiring table added.
+- Tokens: copy button on the one-time reveal (http-safe fallback), Regenerate action
+  (revoke + reissue same name, shown once). Hash-only storage unchanged.
+- Settings: config.ini now editable from the web UI; save writes the file and exits so
+  systemd restarts with new values.
+- API page: full field reference (what each field does + where it renders), request
+  builder generating the curl command, live panel preview via new /preview.png.
+- Tests: 17 passed. Verified builder/settings/tokens pages in browser preview.
+
 ## 2026-07-04 — field fixes after first install on the Pi
 
 - Symptom: panel backlit but full-screen random static; web UI unreachable from LAN.

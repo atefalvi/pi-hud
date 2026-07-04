@@ -16,9 +16,10 @@ DEFAULTS = {
         "rotation": "270",
         "x_offset": "24",
         "y_offset": "0",
-        "dc_pin": "23",
-        "rst_pin": "24",
-        "bl_pin": "18",
+        # BCM numbering; matches the known-working pi-rack-hud wiring
+        "dc_pin": "25",
+        "rst_pin": "27",
+        "bl_pin": "24",
         "spi_port": "0",
         "spi_cs": "0",
         "spi_speed_hz": "24000000",

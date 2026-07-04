@@ -152,6 +152,27 @@ def test_web_pages_render(client):
     assert client.get("/display.png").headers["content-type"] == "image/png"
 
 
+def test_token_regenerate(cfg):
+    tid, old = auth.create_token("regen-" + os.urandom(3).hex())
+    name, new = auth.regenerate(tid)
+    assert new.startswith("ph_") and new != old
+    assert not auth.verify(old)      # old token dead
+    assert auth.verify(new)          # replacement works
+    active = [t for t in auth.list_tokens() if t["name"] == name and t["is_active"]]
+    assert len(active) == 1
+
+
+def test_preview_png(client):
+    r = client.get("/preview.png", params={
+        "type": "success", "title": "DNS Updated",
+        "previous_value": "1.1.1.1", "updated_value": "2.2.2.2",
+        "record_type": "A", "host": "h.example.com"})
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    # unknown type falls back instead of erroring
+    assert client.get("/preview.png", params={"type": "banana"}).status_code == 200
+
+
 def test_pinned_survives_restart(cfg):
     store.clear_all()
     mid = store.create_message("a", "error", "persist", pinned=True, priority=9)

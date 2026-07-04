@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "pi-hud",
-      "runtimeExecutable": ".venv/bin/python",
-      "runtimeArgs": ["-m", "pi_hud.main"],
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["PI_HUD_CONFIG=/tmp/hud-test.ini", ".venv/bin/python", "-m", "pi_hud.main"],
       "port": 8799
     }
   ]

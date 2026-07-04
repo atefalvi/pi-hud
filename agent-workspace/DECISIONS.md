@@ -21,6 +21,36 @@ Tradeoffs:
 - SQLite is used for messages, logs, tokens, system snapshots, and power events.
 - Pending queue screen shows grouped rows and counts only, with no bottom badge pile.
 
+## Implementation decisions (2026-07-04, second pass)
+
+```
+Decision: Display pins corrected to the old pi-rack-hud driver defaults — DC=GPIO25,
+          RST=GPIO27, BL=GPIO24 (BCM).
+Reason:   User confirmed the old driver worked with their wiring; the handoff docs'
+          pins (23/24/18) were wrong — DRIVER_OPTIMIZATION.md's suspected "docs/code pin
+          mismatch" is confirmed, code was right. Blank/static panel on first install
+          was caused by driving the wrong pins.
+Files:    config.py, config.example.ini, drivers/st7735s.py, README.md (wiring table)
+Tradeoffs: Existing /etc/pi-hud/config.ini keeps old values — fix via Settings page or sed.
+```
+
+```
+Decision: Tokens stay hash-only; "copy existing token" is served by a Regenerate action
+          (revoke + reissue under the same name, shown once) plus a copy button on the
+          reveal that works over plain http.
+Reason:   Recoverable tokens would require plaintext storage, which SECURITY.md forbids.
+Files:    auth.py (regenerate), api.py, tokens.html, app.js (copyText fallback)
+```
+
+```
+Decision: Config file editable from the Settings page; saving writes the INI and the
+          process exits ~1s later so systemd (Restart=always) reboots it with new values.
+Reason:   The service user owns /etc/pi-hud but cannot run systemctl; exiting is the
+          zero-privilege restart. In dev (no systemd) the process just exits.
+Files:    api.py (/settings/config), settings.html
+Tradeoffs: Only whitelisted int/bool keys accepted; bad values are ignored not errored.
+```
+
 ## Implementation decisions (2026-07-04)
 
 ```

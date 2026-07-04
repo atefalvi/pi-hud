@@ -4,51 +4,126 @@
   <div>
     <div class="kicker">Integration</div>
     <h2>API</h2>
-    <p>Apps authenticate with a bearer token and POST messages. Create a token on the Tokens page.</p>
+    <p>Apps authenticate with a bearer token (Tokens page) and POST messages. Build a request below and preview exactly what the panel will show.</p>
   </div>
 </div>
 
 <div class="card" style="margin-bottom:24px">
-  <h3>Same-Pi request (pi-dns-sync)</h3>
-  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages \
-  -H "Authorization: Bearer ph_xxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "pi-dns-sync",
-    "type": "success",
-    "title": "DNS Updated",
-    "message": "Cloudflare A record updated.",
-    "pinned": true,
-    "priority": 6,
-    "category": "dns",
-    "metadata": {
-      "host": "home.example.com",
-      "record_type": "A",
-      "previous_value": "203.0.113.42",
-      "updated_value": "198.51.100.27"
-    }
-  }'</div>
+  <h3>Request builder</h3>
+  <div class="grid-2">
+    <form class="stack" id="builder" onsubmit="return false">
+      <label>Token (paste yours)<input id="b-token" placeholder="ph_xxx" class="mono"></label>
+      <label>source — who sent it; shown in the message list and on the alert footer
+        <input id="b-source" value="pi-dns-sync" maxlength="64"></label>
+      <label>type — severity: sets the rail color and type label on the screen
+        <select id="b-type">
+          {% for t in ('success','info','note','warning','caution','error','critical') %}
+          <option {{ 'selected' if t=='success' }}>{{ t }}</option>
+          {% endfor %}
+        </select></label>
+      <label>title — the big headline on the panel (max 48 chars)
+        <input id="b-title" value="DNS Updated" maxlength="48"></label>
+      <label>message — body text, up to two short lines on the panel; full text in the web UI (max 500)
+        <input id="b-message" value="Cloudflare A record updated." maxlength="500"></label>
+      <label>pinned — keeps the alert on the physical display until cleared
+        <select id="b-pinned"><option>true</option><option>false</option></select></label>
+      <label>priority — 1–10; the highest-priority active message owns the screen
+        <input id="b-priority" type="number" min="1" max="10" value="6"></label>
+      <label>category — set to <span class="mono">dns</span> (with the metadata below) to get the DNS screen
+        <input id="b-category" value="dns" maxlength="32"></label>
+      <label>metadata.host — shown in the alert footer on the DNS screen
+        <input id="b-host" value="home.example.com"></label>
+      <label>metadata.record_type / previous_value / updated_value — rendered as
+        <span class="mono">A old → new</span> on the panel
+        <div style="display:flex;gap:8px">
+          <input id="b-rt" value="A" style="width:70px">
+          <input id="b-prev" value="203.0.113.42">
+          <input id="b-new" value="198.51.100.27">
+        </div></label>
+    </form>
+    <div>
+      <h3 style="font-size:14px;color:var(--text-2)">Panel preview (live)</h3>
+      <div class="display-preview" style="min-height:180px;margin-bottom:16px">
+        <img id="b-preview" src="/preview.png" width="320" height="160" alt="panel preview">
+      </div>
+      <h3 style="font-size:14px;color:var(--text-2)">Generated command</h3>
+      <textarea id="b-curl" class="code" style="width:100%;min-height:220px;margin-top:0" readonly></textarea>
+      <div class="btn-row" style="justify-content:start;margin-top:10px">
+        <button class="btn primary" data-copy="#b-curl">Copy command</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="card" style="margin-bottom:24px">
-  <h3>LAN device request</h3>
-  <div class="code">curl -X POST http://&lt;PI_IP&gt;:{{ port }}/api/v1/messages \
-  -H "Authorization: Bearer ph_xxx" \
-  -H "Content-Type: application/json" \
-  -d '{"source":"nas-backup","type":"success","title":"Backup Done","message":"TrueNAS sync finished","priority":3}'</div>
-  <p class="small" style="margin-top:12px">LAN requests require <span class="mono">api_host = 0.0.0.0</span> in the config and a service restart.</p>
-</div>
-
-<div class="card" style="margin-bottom:24px">
-  <h3>Warning message</h3>
-  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages \
-  -H "Authorization: Bearer ph_xxx" -H "Content-Type: application/json" \
-  -d '{"source":"pi-dns-sync","type":"error","title":"DNS Failed","message":"Cloudflare API rejected update request.","pinned":true,"priority":9}'</div>
+  <h3>Field reference</h3>
+  <table>
+    <tr><th>Field</th><th>Required</th><th>What it does / where it shows up</th></tr>
+    <tr><td class="mono">source</td><td>yes</td><td>App name (max 64). Message list, detail page, and the alert footer when there is no DNS metadata.</td></tr>
+    <tr><td class="mono">type</td><td>yes</td><td>One of <span class="mono">success info note warning caution error critical</span>. Colors the rail, type label, and severity chip. Groups the pending-queue screen (error/critical → Error, warning/caution → Power, rest → Info).</td></tr>
+    <tr><td class="mono">title</td><td>yes</td><td>Headline on the panel (max 48, clamped with …) and in all lists.</td></tr>
+    <tr><td class="mono">message</td><td>no</td><td>Body (max 500). Up to two short lines on the panel; full text on the detail page.</td></tr>
+    <tr><td class="mono">pinned</td><td>no</td><td>Default false. True shows the PIN chip and keeps the alert on the physical display until cleared (survives reboot).</td></tr>
+    <tr><td class="mono">priority</td><td>no</td><td>1–10 (default 5). Highest-priority active message is shown; ties go to oldest. Multiple actives → grouped pending screen.</td></tr>
+    <tr><td class="mono">category</td><td>no</td><td>Free tag (max 32). <span class="mono">dns</span> + the metadata below switches the panel to the DNS screen. <span class="mono">power</span> is used internally for power alerts.</td></tr>
+    <tr><td class="mono">metadata</td><td>no</td><td>JSON object, ≤4096 chars serialized. Shown raw on the detail page.</td></tr>
+    <tr><td class="mono">metadata.host</td><td>no</td><td>DNS screen footer + detail field.</td></tr>
+    <tr><td class="mono">metadata.record_type</td><td>no</td><td>Record letter in <span class="mono">A old → new</span>.</td></tr>
+    <tr><td class="mono">metadata.previous_value</td><td>no</td><td>Old value on panel + "Old IP" stat on the dashboard.</td></tr>
+    <tr><td class="mono">metadata.updated_value</td><td>no</td><td>New value on panel + "New IP" stat on the dashboard.</td></tr>
+    <tr><td class="mono">metadata.timeline</td><td>no</td><td>List of <span class="mono">{"time","label","detail"}</span> — rendered as the timeline on the detail page.</td></tr>
+  </table>
 </div>
 
 <div class="card">
-  <h3>Clear the current alert</h3>
-  <div class="code">curl -X POST http://127.0.0.1:{{ port }}/api/v1/messages/current/clear</div>
-  <p class="small" style="margin-top:12px">Health check: <span class="mono">GET /health</span> · List: <span class="mono">GET /api/v1/messages?status=active</span></p>
+  <h3>Other endpoints</h3>
+  <div class="code">GET  /health                              service, display, db status
+GET  /api/v1/messages?status=active       list messages (status=active|cleared|all)
+GET  /api/v1/messages/{id}                full detail
+POST /api/v1/messages/{id}/clear          clear one
+POST /api/v1/messages/current/clear       clear what's on the display
+POST /api/v1/messages/clear-all           clear everything</div>
+  <p class="small" style="margin-top:12px">LAN devices use <span class="mono">http://&lt;PI_IP&gt;:{{ port }}</span> — requires <span class="mono">lan_mode = true</span> in Settings.</p>
 </div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const ids = ["token","source","type","title","message","pinned","priority",
+               "category","host","rt","prev","new"];
+  function build() {
+    const v = {};
+    ids.forEach((k) => (v[k] = $("b-" + k).value.trim()));
+    const meta = {};
+    if (v.host) meta.host = v.host;
+    if (v.rt) meta.record_type = v.rt;
+    if (v.prev) meta.previous_value = v.prev;
+    if (v.new) meta.updated_value = v.new;
+    const body = { source: v.source || "my-app", type: v.type, title: v.title || "Title" };
+    if (v.message) body.message = v.message;
+    body.pinned = v.pinned === "true";
+    body.priority = Math.min(10, Math.max(1, parseInt(v.priority || "5", 10)));
+    if (v.category) body.category = v.category;
+    if (Object.keys(meta).length) body.metadata = meta;
+
+    $("b-curl").value =
+      "curl -X POST http://" + location.host + "/api/v1/messages \\\n" +
+      '  -H "Authorization: Bearer ' + (v.token || "ph_xxx") + '" \\\n' +
+      '  -H "Content-Type: application/json" \\\n' +
+      "  -d '" + JSON.stringify(body, null, 2) + "'";
+
+    const q = new URLSearchParams({
+      type: v.type, title: body.title, message: v.message,
+      pinned: body.pinned, source: body.source, host: v.host,
+      record_type: v.rt, previous_value: v.prev, updated_value: v.new,
+    });
+    $("b-preview").src = "/preview.png?" + q.toString();
+  }
+  let t;
+  document.getElementById("builder").addEventListener("input", () => {
+    clearTimeout(t); t = setTimeout(build, 250);
+  });
+  build();
+})();
+</script>
 {% endblock %}

@@ -39,6 +39,21 @@ def verify(token: str | None) -> bool:
     return False
 
 
+def regenerate(token_id: int) -> tuple[str, str] | None:
+    """Revoke a token and issue a fresh one under the same app name.
+    Returns (name, new_plaintext) or None if the id is unknown."""
+    row = db.query_one("SELECT id, name FROM app_tokens WHERE id=?", (token_id,))
+    if not row:
+        return None
+    name = row["name"]
+    # rename the old row to free the UNIQUE name for the replacement
+    db.write(
+        "UPDATE app_tokens SET name=?, is_active=0, revoked_at=COALESCE(revoked_at,?) WHERE id=?",
+        (f"{name}#{token_id}", now(), token_id))
+    _, token = create_token(name)
+    return name, token
+
+
 def revoke(token_id: int) -> bool:
     cur = db.write(
         "UPDATE app_tokens SET is_active=0, revoked_at=? WHERE id=? AND is_active=1",

@@ -20,9 +20,13 @@
     {% if new_token %}
     <div class="token-reveal">
       <div class="small" style="margin-bottom:8px">Token for <strong>{{ new_name }}</strong> — copy it now, it will not be shown again:</div>
-      <code>{{ new_token }}</code>
+      <code id="new-token">{{ new_token }}</code>
+      <div style="margin-top:10px"><button class="btn" data-copy="#new-token">Copy token</button></div>
     </div>
     {% endif %}
+    <p class="small" style="margin-top:16px">Only a hash is stored, so existing tokens can never
+    be shown again. Lost one? Use <strong>Regenerate</strong> — the app keeps its name and gets a
+    fresh token (the old one stops working).</p>
   </div>
 
   <div class="card">
@@ -37,9 +41,14 @@
         <td class="mono">{{ t.last_used_at or 'never' }}</td>
         <td>{% if t.is_active %}<span class="green">active</span>{% else %}<span class="muted">revoked</span>{% endif %}</td>
         <td>{% if t.is_active %}
-          <form method="post" action="/tokens/{{ t.id }}/revoke" onsubmit="return confirm('Revoke {{ t.name }}?')">
-            <button class="btn danger" type="submit">Revoke</button>
-          </form>
+          <div style="display:flex;gap:8px">
+            <form method="post" action="/tokens/{{ t.id }}/regenerate" onsubmit="return confirm('Regenerate {{ t.name }}? The old token stops working.')">
+              <button class="btn" type="submit">Regenerate</button>
+            </form>
+            <form method="post" action="/tokens/{{ t.id }}/revoke" onsubmit="return confirm('Revoke {{ t.name }}?')">
+              <button class="btn danger" type="submit">Revoke</button>
+            </form>
+          </div>
         {% endif %}</td>
       </tr>
       {% endfor %}

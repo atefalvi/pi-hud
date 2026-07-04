@@ -34,6 +34,22 @@ git clone https://github.com/atefalvi/pi-hud.git && cd pi-hud && sudo ./install.
 
 > Enable SPI first if you haven't: `sudo raspi-config` → Interface Options → SPI → reboot.
 
+## Wiring (ST7735S 0.96" 160×80)
+
+BCM numbering — these are the defaults in `config.ini` and match the proven
+`pi-rack-hud` wiring. All of them are editable on the **Settings** page.
+
+| Panel pin | Pi signal      | BCM    | Physical pin |
+|-----------|----------------|--------|--------------|
+| VCC       | 3.3V           | —      | 1 or 17      |
+| GND       | Ground         | —      | 6/9/14/20    |
+| SCL/SCK   | SPI0 SCLK      | GPIO11 | 23           |
+| SDA/MOSI  | SPI0 MOSI      | GPIO10 | 19           |
+| CS        | SPI0 CE0       | GPIO8  | 24           |
+| DC        | Data/Command   | GPIO25 | 22           |
+| RST/RES   | Reset          | GPIO27 | 13           |
+| BLK/BL    | Backlight      | GPIO24 | 18           |
+
 ### Update / uninstall
 
 ```bash
@@ -111,8 +127,9 @@ sudo systemctl start pi-hud
 ```
 
 You should see red → green → blue → white, then the boot screen. If nothing changes,
-check wiring (MOSI=GPIO10, SCLK=GPIO11, CS=CE0/GPIO8, DC/RST/BL per config) and that SPI
-is enabled. `curl http://127.0.0.1:8765/health` reports the display status
+check the pins in `/etc/pi-hud/config.ini` against the Wiring table above (a stale config
+from an older install may have wrong DC/RST/BL pins — fix them on the Settings page or in
+the file) and confirm SPI is enabled. `curl http://127.0.0.1:8765/health` reports the display status
 (`ok` / `unavailable`), and `journalctl -u pi-hud -n 50` shows driver errors.
 
 **Can't reach the web UI from another device** — enable LAN mode (see Configuration).

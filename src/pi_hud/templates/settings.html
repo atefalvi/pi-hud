@@ -36,19 +36,30 @@
   </div>
 
   <div class="card">
-    <h3>Config file (restart to change)</h3>
-    <p class="small" style="margin-bottom:12px">Edit <span class="mono">{{ cfg.path or '/etc/pi-hud/config.ini' }}</span> then <span class="mono">systemctl restart pi-hud</span>.</p>
-    <table>
-      <tr><th>Key</th><th>Value</th></tr>
-      <tr><td>API host</td><td class="mono">{{ cfg.get('api','host') }}</td></tr>
-      <tr><td>API port</td><td class="mono">{{ cfg.get('api','port') }}</td></tr>
-      <tr><td>LAN mode</td><td class="mono">{{ cfg.get('api','lan_mode') }}</td></tr>
-      <tr><td>Display rotation</td><td class="mono">{{ cfg.get('display','rotation') }}</td></tr>
-      <tr><td>x / y offset</td><td class="mono">{{ cfg.get('display','x_offset') }} / {{ cfg.get('display','y_offset') }}</td></tr>
-      <tr><td>DC / RST / BL pin</td><td class="mono">{{ cfg.get('display','dc_pin') }} / {{ cfg.get('display','rst_pin') }} / {{ cfg.get('display','bl_pin') }}</td></tr>
-      <tr><td>Normal refresh</td><td class="mono">{{ cfg.get('display','normal_refresh_seconds') }}s</td></tr>
-      <tr><td>Power refresh</td><td class="mono">{{ cfg.get('display','power_refresh_seconds') }}s</td></tr>
-    </table>
+    <h3>Config file</h3>
+    <p class="small" style="margin-bottom:12px">Writes <span class="mono">{{ cfg.path or '/etc/pi-hud/config.ini' }}</span> and restarts the service (systemd brings it back with the new values).</p>
+    {% macro sel_bool(name, cur) %}
+      <select name="{{ name }}">
+        <option value="true" {{ 'selected' if cur }}>true</option>
+        <option value="false" {{ 'selected' if not cur }}>false</option>
+      </select>
+    {% endmacro %}
+    <form class="stack" method="post" action="/settings/config"
+          onsubmit="return confirm('Save config and restart pi-hud?')">
+      <label>API port<input name="port" value="{{ cfg.get('api','port') }}"></label>
+      <label>LAN mode (bind 0.0.0.0 — never port-forward){{ sel_bool('lan_mode', cfg.getbool('api','lan_mode')) }}</label>
+      <label>Display enabled{{ sel_bool('enabled', cfg.getbool('display','enabled')) }}</label>
+      <label>Rotation (0/90/180/270)<input name="rotation" value="{{ cfg.get('display','rotation') }}"></label>
+      <label>X offset<input name="x_offset" value="{{ cfg.get('display','x_offset') }}"></label>
+      <label>Y offset<input name="y_offset" value="{{ cfg.get('display','y_offset') }}"></label>
+      <label>DC pin (BCM)<input name="dc_pin" value="{{ cfg.get('display','dc_pin') }}"></label>
+      <label>RST pin (BCM)<input name="rst_pin" value="{{ cfg.get('display','rst_pin') }}"></label>
+      <label>BL pin (BCM)<input name="bl_pin" value="{{ cfg.get('display','bl_pin') }}"></label>
+      <label>SPI speed (Hz)<input name="spi_speed_hz" value="{{ cfg.get('display','spi_speed_hz') }}"></label>
+      <label>Normal refresh (s)<input name="normal_refresh_seconds" value="{{ cfg.get('display','normal_refresh_seconds') }}"></label>
+      <label>Power refresh (s)<input name="power_refresh_seconds" value="{{ cfg.get('display','power_refresh_seconds') }}"></label>
+      <div><button class="btn primary" type="submit">Save &amp; restart service</button></div>
+    </form>
   </div>
 </div>
 {% endblock %}

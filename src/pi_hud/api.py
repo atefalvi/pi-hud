@@ -7,6 +7,9 @@ pi-hud to the internet.
 """
 import io
 import json
+import os
+import signal
+import threading
 import time
 from pathlib import Path
 
@@ -18,6 +21,7 @@ from fastapi.templating import Jinja2Templates
 from . import auth, db, display_loop
 from . import message_store as store
 from .config import Config
+from .message_store import VALID_TYPES
 from .models import MessageIn, TokenIn
 
 _HERE = Path(__file__).parent
@@ -108,6 +112,29 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
     def api_token_revoke(tid: int):
         return {"ok": auth.revoke(tid)}
 
+    @app.get("/preview.png")
+    def preview_png(type: str = "success", title: str = "Title", message: str = "",
+                    pinned: bool = True, source: str = "my-app", host: str = "",
+                    record_type: str = "", previous_value: str = "",
+                    updated_value: str = ""):
+        """Render a demo alert frame from query params — used by the API-docs
+        builder so users see exactly what the panel will show."""
+        from . import renderer
+        if type not in VALID_TYPES:
+            type = "info"
+        m = {"type": type, "title": title[:48] or "Title",
+             "message": message[:500] or None, "pinned": pinned,
+             "source": source[:64],
+             "category": "dns" if previous_value and updated_value else None,
+             "metadata": {"host": host, "record_type": record_type,
+                          "previous_value": previous_value,
+                          "updated_value": updated_value}}
+        img = renderer.render_message(m).resize((320, 160))
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        return Response(buf.getvalue(), media_type="image/png",
+                        headers={"Cache-Control": "no-store"})
+
     @app.get("/display.png")
     def display_png():
         img = display_loop.build_frame(cfg).resize((320, 160))
@@ -164,6 +191,15 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
         auth.revoke(tid)
         return RedirectResponse("/tokens", status_code=303)
 
+    @app.post("/tokens/{tid}/regenerate", response_class=HTMLResponse)
+    async def tokens_regenerate(request: Request, tid: int):
+        res = auth.regenerate(tid)
+        name, new = res if res else (None, None)
+        if new:
+            store.log("info", "admin", "token_regenerated", name)
+        return page(request, "tokens.html", tokens=[dict(t) for t in auth.list_tokens()],
+                    new_token=new, new_name=name, nav="tokens")
+
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request):
         return page(request, "settings.html", cfg=cfg, overrides=store.all_settings(),
@@ -179,6 +215,38 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
                 store.set_setting(key, str(form[key]).strip())
         store.log("info", "admin", "settings_updated", "")
         return RedirectResponse("/settings", status_code=303)
+
+    # keys editable from the web UI, with light validation
+    _CFG_INT = {("api", "port"), ("display", "rotation"), ("display", "x_offset"),
+                ("display", "y_offset"), ("display", "dc_pin"), ("display", "rst_pin"),
+                ("display", "bl_pin"), ("display", "spi_speed_hz"),
+                ("display", "normal_refresh_seconds"), ("display", "power_refresh_seconds")}
+    _CFG_BOOL = {("api", "lan_mode"), ("display", "enabled")}
+
+    @app.post("/settings/config", response_class=HTMLResponse)
+    async def settings_config(request: Request):
+        form = await request.form()
+        for section, key in _CFG_INT | _CFG_BOOL:
+            v = str(form.get(key, "")).strip()
+            if (section, key) in _CFG_INT and v.lstrip("-").isdigit():
+                cfg._p.set(section, key, v)
+            elif (section, key) in _CFG_BOOL and v in ("true", "false"):
+                cfg._p.set(section, key, v)
+        path = cfg.path or "/etc/pi-hud/config.ini"
+        with open(path, "w") as f:
+            cfg._p.write(f)
+        store.log("info", "admin", "config_updated", path)
+        # Let the response flush, then exit; systemd (Restart=always) brings us
+        # back with the new config. Skipped under pytest so tests survive.
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            threading.Timer(
+                1.0, lambda: os.kill(os.getpid(), signal.SIGTERM)).start()
+        return HTMLResponse(
+            "<meta http-equiv='refresh' content='6;url=/settings'>"
+            "<body style='background:#0A0C10;color:#EDEFF3;font-family:sans-serif;"
+            "display:grid;place-items:center;height:100vh'>"
+            f"<p>Config saved to {path}.<br>Service is restarting — "
+            "this page reloads in a few seconds.</p></body>")
 
     @app.get("/logs", response_class=HTMLResponse)
     def logs(request: Request):

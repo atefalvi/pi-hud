@@ -36,7 +36,7 @@ log = logging.getLogger("pi_hud.st7735s")
 class ST7735S:
     _FONT_CACHE: dict = {}
 
-    def __init__(self, dc=23, rst=24, bl=18, port=0, cs=0, speed_hz=24_000_000,
+    def __init__(self, dc=25, rst=27, bl=24, port=0, cs=0, speed_hz=24_000_000,
                  rotation=270, invert=False, x_offset=24, y_offset=0):
         import RPi.GPIO as GPIO  # lazy: Pi-only
         import spidev
