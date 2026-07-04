@@ -24,7 +24,8 @@ _CMD_PWCTR1, _CMD_PWCTR2, _CMD_PWCTR3, _CMD_PWCTR4, _CMD_PWCTR5 = \
     0xC0, 0xC1, 0xC2, 0xC3, 0xC4
 _CMD_VMCTR1 = 0xC5
 
-_MADCTL_RGB, _MADCTL_MV, _MADCTL_MX, _MADCTL_MY = 0x00, 0x20, 0x40, 0x80
+_MADCTL_RGB, _MADCTL_BGR = 0x00, 0x08
+_MADCTL_MV, _MADCTL_MX, _MADCTL_MY = 0x20, 0x40, 0x80
 _COLMOD_16BIT = 0x05
 
 _DISPLAY_WIDTH, _DISPLAY_HEIGHT = 80, 160  # native portrait
@@ -37,10 +38,11 @@ class ST7735S:
     _FONT_CACHE: dict = {}
 
     def __init__(self, dc=25, rst=27, bl=24, port=0, cs=0, speed_hz=24_000_000,
-                 rotation=270, invert=False, x_offset=24, y_offset=0):
+                 rotation=270, invert=False, bgr=True, x_offset=24, y_offset=0):
         import RPi.GPIO as GPIO  # lazy: Pi-only
         import spidev
         self._GPIO = GPIO
+        self._bgr = bgr  # panel subpixel order; wrong setting = red/blue swapped
 
         self.orig_width, self.orig_height = _DISPLAY_WIDTH, _DISPLAY_HEIGHT
         self._hw_x_offset, self._hw_y_offset = x_offset, y_offset
@@ -171,7 +173,7 @@ class ST7735S:
         rotation %= 360
         if rotation not in (0, 90, 180, 270):
             raise ValueError("rotation must be 0/90/180/270")
-        madctl = _MADCTL_RGB
+        madctl = _MADCTL_BGR if getattr(self, "_bgr", True) else _MADCTL_RGB
         if rotation == 0:
             madctl |= _MADCTL_MX | _MADCTL_MY
             self.width, self.height = self.orig_width, self.orig_height

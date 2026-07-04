@@ -29,9 +29,9 @@
       {% set md = active.metadata %}
       {% if md.previous_value and md.updated_value %}
       <div class="stats">
-        <div class="stat"><div class="label">Old IP</div><div class="value blue">{{ md.previous_value }}</div></div>
-        <div class="stat"><div class="label">New IP</div><div class="value green">{{ md.updated_value }}</div></div>
-        <div class="stat"><div class="label">Record</div><div class="value ember">{{ md.record_type or 'A' }}</div></div>
+        <div class="stat"><div class="label">Previous</div><div class="value blue">{{ md.previous_value }}</div></div>
+        <div class="stat"><div class="label">Updated</div><div class="value green">{{ md.updated_value }}</div></div>
+        {% if md.record_type %}<div class="stat"><div class="label">Type</div><div class="value ember">{{ md.record_type }}</div></div>{% endif %}
       </div>
       {% endif %}
       {% if active.message %}<div class="callout">{{ active.message }}</div>{% endif %}

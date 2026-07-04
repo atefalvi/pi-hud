@@ -78,6 +78,11 @@ class DisplayLoop:
         self._thread = None
         self._prev_power: dict | None = None
         self.status = "ok"
+        self._test_until = 0.0  # while in the future, show the color-check frame
+
+    def show_color_test(self, seconds: int = 20):
+        """Hold the labeled color-check frame on the panel for a while."""
+        self._test_until = time.monotonic() + seconds
 
     def start(self):
         if self.cfg.getbool("display", "enabled"):
@@ -100,6 +105,8 @@ class DisplayLoop:
                 rotation=self.cfg.getint("display", "rotation"),
                 x_offset=self.cfg.getint("display", "x_offset"),
                 y_offset=self.cfg.getint("display", "y_offset"),
+                bgr=self.cfg.getbool("display", "bgr"),
+                invert=self.cfg.getbool("display", "invert"),
             )
             self.driver.display(renderer.render_boot())
             self.status = "ok"
@@ -126,6 +133,11 @@ class DisplayLoop:
         metrics.psutil.cpu_percent(interval=None)  # prime the counter
         while not self._stop.is_set():
             try:
+                if time.monotonic() < self._test_until:
+                    if self.driver:
+                        self.driver.display_if_changed(renderer.render_colorcheck())
+                    self._stop.wait(1)
+                    continue
                 snap = metrics.snapshot()
                 frame = build_frame(self.cfg, snap)
                 if self.driver:

@@ -168,13 +168,29 @@ def render_queue(total: int, groups: list) -> Image.Image:
 def render_message(m: dict) -> Image.Image:
     """Pick the right screen for an active message row (dict-like)."""
     md = m.get("metadata") or {}
-    if m["category"] == "dns" and md.get("previous_value") and md.get("updated_value"):
-        rt = md.get("record_type", "A")
-        body = f"{rt} {md['previous_value']} → {md['updated_value']}"
+    # any message with a previous/updated pair gets the change-line screen
+    # (DNS updates, config changes, version bumps, ...)
+    if md.get("previous_value") and md.get("updated_value"):
+        label = md.get("record_type", "")
+        body = f"{label} {md['previous_value']} → {md['updated_value']}".strip()
         return render_alert(m["type"], m["title"], body, bool(m["pinned"]),
-                            footer_left=md.get("host", m["source"]))
+                            footer_left=md.get("host") or m["source"])
     return render_alert(m["type"], m["title"], m.get("message"), bool(m["pinned"]),
                         footer_left=m["source"])
+
+
+def render_colorcheck() -> Image.Image:
+    """Labeled color bars for panel calibration. Each bar's label names the
+    color it SHOULD be — if 'RED' looks blue, flip the bgr setting."""
+    img, d = _canvas()
+    bars = [("RED", (255, 0, 0)), ("GRN", (0, 255, 0)), ("BLU", (0, 0, 255)),
+            ("EMBR", ACCENT), ("WHT", (255, 255, 255))]
+    bw = W // len(bars)
+    for i, (label, color) in enumerate(bars):
+        x = i * bw
+        d.rectangle((x, 14, x + bw - 1, H), fill=color)
+        d.text((x + 2, 2), label, font=_font(9), fill=color)
+    return img
 
 
 def render_boot(text="pi-hud") -> Image.Image:

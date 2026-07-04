@@ -14,7 +14,7 @@
     <form class="stack" id="builder" onsubmit="return false">
       <label>Token (paste yours)<input id="b-token" placeholder="ph_xxx" class="mono"></label>
       <label>source — who sent it; shown in the message list and on the alert footer
-        <input id="b-source" value="pi-dns-sync" maxlength="64"></label>
+        <input id="b-source" value="my-app" maxlength="64"></label>
       <label>type — severity: sets the rail color and type label on the screen
         <select id="b-type">
           {% for t in ('success','info','note','warning','caution','error','critical') %}
@@ -22,23 +22,23 @@
           {% endfor %}
         </select></label>
       <label>title — the big headline on the panel (max 48 chars)
-        <input id="b-title" value="DNS Updated" maxlength="48"></label>
+        <input id="b-title" value="Backup Done" maxlength="48"></label>
       <label>message — body text, up to two short lines on the panel; full text in the web UI (max 500)
-        <input id="b-message" value="Cloudflare A record updated." maxlength="500"></label>
+        <input id="b-message" value="Nightly sync finished." maxlength="500"></label>
       <label>pinned — keeps the alert on the physical display until cleared
         <select id="b-pinned"><option>true</option><option>false</option></select></label>
       <label>priority — 1–10; the highest-priority active message owns the screen
-        <input id="b-priority" type="number" min="1" max="10" value="6"></label>
-      <label>category — set to <span class="mono">dns</span> (with the metadata below) to get the DNS screen
-        <input id="b-category" value="dns" maxlength="32"></label>
-      <label>metadata.host — shown in the alert footer on the DNS screen
-        <input id="b-host" value="home.example.com"></label>
-      <label>metadata.record_type / previous_value / updated_value — rendered as
-        <span class="mono">A old → new</span> on the panel
+        <input id="b-priority" type="number" min="1" max="10" value="5"></label>
+      <label>category — optional free tag for grouping (e.g. <span class="mono">dns</span>, <span class="mono">backup</span>, <span class="mono">power</span>)
+        <input id="b-category" value="" maxlength="32"></label>
+      <label>metadata.host — optional footer label on the alert (hostname, device, share…)
+        <input id="b-host" value=""></label>
+      <label>optional change line — if previous + updated are set, the panel body becomes
+        <span class="mono">label old → new</span> (DNS records, config values, versions…)
         <div style="display:flex;gap:8px">
-          <input id="b-rt" value="A" style="width:70px">
-          <input id="b-prev" value="203.0.113.42">
-          <input id="b-new" value="198.51.100.27">
+          <input id="b-rt" placeholder="label" style="width:80px">
+          <input id="b-prev" placeholder="previous value">
+          <input id="b-new" placeholder="updated value">
         </div></label>
     </form>
     <div>
@@ -50,7 +50,9 @@
       <textarea id="b-curl" class="code" style="width:100%;min-height:220px;margin-top:0" readonly></textarea>
       <div class="btn-row" style="justify-content:start;margin-top:10px">
         <button class="btn primary" data-copy="#b-curl">Copy command</button>
+        <button class="btn" id="b-send">Send to display (test)</button>
       </div>
+      <p class="small" id="b-send-status" style="margin-top:8px"></p>
     </div>
   </div>
 </div>
@@ -65,12 +67,11 @@
     <tr><td class="mono">message</td><td>no</td><td>Body (max 500). Up to two short lines on the panel; full text on the detail page.</td></tr>
     <tr><td class="mono">pinned</td><td>no</td><td>Default false. True shows the PIN chip and keeps the alert on the physical display until cleared (survives reboot).</td></tr>
     <tr><td class="mono">priority</td><td>no</td><td>1–10 (default 5). Highest-priority active message is shown; ties go to oldest. Multiple actives → grouped pending screen.</td></tr>
-    <tr><td class="mono">category</td><td>no</td><td>Free tag (max 32). <span class="mono">dns</span> + the metadata below switches the panel to the DNS screen. <span class="mono">power</span> is used internally for power alerts.</td></tr>
-    <tr><td class="mono">metadata</td><td>no</td><td>JSON object, ≤4096 chars serialized. Shown raw on the detail page.</td></tr>
-    <tr><td class="mono">metadata.host</td><td>no</td><td>DNS screen footer + detail field.</td></tr>
-    <tr><td class="mono">metadata.record_type</td><td>no</td><td>Record letter in <span class="mono">A old → new</span>.</td></tr>
-    <tr><td class="mono">metadata.previous_value</td><td>no</td><td>Old value on panel + "Old IP" stat on the dashboard.</td></tr>
-    <tr><td class="mono">metadata.updated_value</td><td>no</td><td>New value on panel + "New IP" stat on the dashboard.</td></tr>
+    <tr><td class="mono">category</td><td>no</td><td>Free grouping tag (max 32) — e.g. <span class="mono">dns</span>, <span class="mono">backup</span>. <span class="mono">power</span> is used internally for power alerts.</td></tr>
+    <tr><td class="mono">metadata</td><td>no</td><td>Any JSON object, ≤4096 chars serialized. Shown raw on the detail page. The keys below are optional and get special rendering.</td></tr>
+    <tr><td class="mono">metadata.host</td><td>no</td><td>Footer label on the alert screen (hostname, device, share name…) + detail field.</td></tr>
+    <tr><td class="mono">metadata.previous_value / updated_value</td><td>no</td><td>When both are set, the panel body becomes a change line <span class="mono">old → new</span>, and the dashboard shows Previous/Updated stats. Works for DNS records, IPs, versions, config values…</td></tr>
+    <tr><td class="mono">metadata.record_type</td><td>no</td><td>Optional label prefixed to the change line, e.g. <span class="mono">A old → new</span>.</td></tr>
     <tr><td class="mono">metadata.timeline</td><td>no</td><td>List of <span class="mono">{"time","label","detail"}</span> — rendered as the timeline on the detail page.</td></tr>
   </table>
 </div>
@@ -118,10 +119,28 @@ POST /api/v1/messages/clear-all           clear everything</div>
       record_type: v.rt, previous_value: v.prev, updated_value: v.new,
     });
     $("b-preview").src = "/preview.png?" + q.toString();
+    return body;
   }
   let t;
   document.getElementById("builder").addEventListener("input", () => {
     clearTimeout(t); t = setTimeout(build, 250);
+  });
+  $("b-send").addEventListener("click", async () => {
+    const status = $("b-send-status");
+    status.textContent = "sending…";
+    try {
+      const r = await fetch("/web/test-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(build()),
+      });
+      const j = await r.json();
+      status.textContent = r.ok
+        ? "Sent — message #" + j.message_id + " is on the display (clear it from the Dashboard)."
+        : "Rejected: " + JSON.stringify(j.detail || j);
+    } catch (e) {
+      status.textContent = "Failed: " + e;
+    }
   });
   build();
 })();

@@ -15,6 +15,17 @@
 </div>
 {% endif %}
 
+<div class="card" style="margin-bottom:24px">
+  <h3>Display color check</h3>
+  <p class="small" style="margin-bottom:12px">Shows labeled color bars (RED / GRN / BLU / EMBR / WHT)
+  on the physical panel for ~20 seconds, then returns to normal. If the bar under
+  <span class="mono">RED</span> looks blue, flip <strong>BGR color order</strong> below and save.
+  If colors look like a photo negative, flip <strong>Invert colors</strong>.</p>
+  <form method="post" action="/settings/display-test">
+    <button class="btn primary" type="submit">Run color check on display</button>
+  </form>
+</div>
+
 <div class="grid-2">
   <div class="card">
     <h3>Live thresholds</h3>
@@ -56,6 +67,8 @@
       <label>RST pin (BCM)<input name="rst_pin" value="{{ cfg.get('display','rst_pin') }}"></label>
       <label>BL pin (BCM)<input name="bl_pin" value="{{ cfg.get('display','bl_pin') }}"></label>
       <label>SPI speed (Hz)<input name="spi_speed_hz" value="{{ cfg.get('display','spi_speed_hz') }}"></label>
+      <label>BGR color order (flip if red/blue look swapped){{ sel_bool('bgr', cfg.getbool('display','bgr')) }}</label>
+      <label>Invert colors (for panels showing negatives){{ sel_bool('invert', cfg.getbool('display','invert')) }}</label>
       <label>Normal refresh (s)<input name="normal_refresh_seconds" value="{{ cfg.get('display','normal_refresh_seconds') }}"></label>
       <label>Power refresh (s)<input name="power_refresh_seconds" value="{{ cfg.get('display','power_refresh_seconds') }}"></label>
       <div><button class="btn primary" type="submit">Save &amp; restart service</button></div>

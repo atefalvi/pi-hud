@@ -21,6 +21,33 @@ Tradeoffs:
 - SQLite is used for messages, logs, tokens, system snapshots, and power events.
 - Pending queue screen shows grouped rows and counts only, with no bottom badge pile.
 
+## Implementation decisions (2026-07-04, third pass)
+
+```
+Decision: Panel color order is a config knob (`bgr`, default true) using the MADCTL BGR
+          bit, plus an `invert` knob; Settings gets a labeled color-check screen.
+Reason:   User's panel rendered ember as blue — red/blue swapped, i.e. BGR subpixel
+          order. Different ST7735S batches differ, so it must be configurable, and the
+          color check makes the right value obvious without guesswork.
+Files:    drivers/st7735s.py, config.py, config.example.ini, display_loop.py,
+          renderer.render_colorcheck, api.py (/settings/display-test), settings.html
+```
+
+```
+Decision: The change-line alert screen triggers on metadata previous_value+updated_value
+          for ANY message (category no longer required to be "dns"); record_type is an
+          optional label. Builder/docs/dashboard reworded generically.
+Reason:   The screen is useful for any before→after event (versions, IPs, config).
+Files:    renderer.py, apidocs.html, dashboard.html
+```
+
+```
+Decision: Builder "Send to display" posts to unauthenticated /web/test-message.
+Reason:   Consistent with the existing web-UI trust model (clear/tokens/settings are
+          already unauthenticated for the LAN operator); payload still validated.
+Files:    api.py, apidocs.html
+```
+
 ## Implementation decisions (2026-07-04, second pass)
 
 ```

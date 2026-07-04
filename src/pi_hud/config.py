@@ -23,6 +23,10 @@ DEFAULTS = {
         "spi_port": "0",
         "spi_cs": "0",
         "spi_speed_hz": "24000000",
+        # panel color variant: bgr=true fixes red/blue swap; invert for panels
+        # that show negative colors
+        "bgr": "true",
+        "invert": "false",
         "normal_refresh_seconds": "2",
         "power_refresh_seconds": "10",
     },

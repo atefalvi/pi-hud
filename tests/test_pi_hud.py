@@ -173,6 +173,32 @@ def test_preview_png(client):
     assert client.get("/preview.png", params={"type": "banana"}).status_code == 200
 
 
+def test_generic_change_line_screen():
+    # change-line screen no longer requires category == "dns"
+    img = renderer.render_message({
+        "type": "info", "title": "Version Bump", "message": None, "pinned": 1,
+        "source": "updater", "category": "software",
+        "metadata": {"previous_value": "1.2.0", "updated_value": "1.3.0"}})
+    assert img.size == (160, 80)
+    assert renderer.render_colorcheck().size == (160, 80)
+
+
+def test_web_test_message(client, cfg):
+    store.clear_all()
+    r = client.post("/web/test-message", json={
+        "source": "web-ui", "type": "note", "title": "Builder Test"})
+    assert r.status_code == 200 and r.json()["ok"]
+    assert store.active_count() == 1
+    # still validates
+    assert client.post("/web/test-message", json={
+        "source": "x", "type": "nope", "title": "t"}).status_code == 422
+
+
+def test_health_has_version(client):
+    j = client.get("/health").json()
+    assert "version" in j and "uptime_s" in j
+
+
 def test_pinned_survives_restart(cfg):
     store.clear_all()
     mid = store.create_message("a", "error", "persist", pinned=True, priority=9)

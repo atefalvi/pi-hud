@@ -59,6 +59,8 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
             store.log("warning", "auth", "auth_failure", f"ip={ip}")
             raise HTTPException(401, "invalid or missing token")
 
+    started = time.monotonic()
+
     # ---------------- JSON API ----------------
     @app.get("/health")
     def health():
@@ -67,8 +69,11 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
             dbs = "ok"
         except Exception:
             dbs = "error"
+        from . import __version__
         return {"status": "ok", "display": loop.status, "database": dbs,
-                "active_messages": store.active_count()}
+                "active_messages": store.active_count(),
+                "version": __version__,
+                "uptime_s": int(time.monotonic() - started)}
 
     @app.post("/api/v1/messages", dependencies=[Depends(require_token)])
     def create_message(m: MessageIn):
@@ -221,7 +226,25 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
                 ("display", "y_offset"), ("display", "dc_pin"), ("display", "rst_pin"),
                 ("display", "bl_pin"), ("display", "spi_speed_hz"),
                 ("display", "normal_refresh_seconds"), ("display", "power_refresh_seconds")}
-    _CFG_BOOL = {("api", "lan_mode"), ("display", "enabled")}
+    _CFG_BOOL = {("api", "lan_mode"), ("display", "enabled"),
+                 ("display", "bgr"), ("display", "invert")}
+
+    @app.post("/web/test-message")
+    def web_test_message(m: MessageIn):
+        """Send a message from the web UI (builder 'send to display'). Same
+        trust model as the other web actions: local/LAN operator, no token."""
+        mid = store.create_message(
+            source=m.source, type=m.type, title=m.title, message=m.message,
+            pinned=m.pinned, priority=m.priority, category=m.category,
+            metadata=m.metadata)
+        store.log("info", "web-ui", "test_message_created", f"id={mid}")
+        return {"ok": True, "message_id": mid}
+
+    @app.post("/settings/display-test")
+    async def settings_display_test():
+        loop.show_color_test()
+        store.log("info", "admin", "display_color_test", "")
+        return RedirectResponse("/settings", status_code=303)
 
     @app.post("/settings/config", response_class=HTMLResponse)
     async def settings_config(request: Request):
