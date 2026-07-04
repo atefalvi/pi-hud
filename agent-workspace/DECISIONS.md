@@ -21,6 +21,26 @@ Tradeoffs:
 - SQLite is used for messages, logs, tokens, system snapshots, and power events.
 - Pending queue screen shows grouped rows and counts only, with no bottom badge pile.
 
+## Implementation decisions (2026-07-04)
+
+```
+Decision: `lan_mode = true` binds 0.0.0.0 directly; the `host` key is only used when
+          lan_mode is false. One switch instead of two coupled keys.
+Reason:   First install showed lan_mode was cosmetic — users flip the documented flag and
+          expect LAN access. Default stays 127.0.0.1 (SECURITY.md: LAN must be explicit).
+Files:    main.py, api.py (warning banner), README.md, install.sh
+Tradeoffs: `host` is ignored when lan_mode=true; documented in README.
+```
+
+```
+Decision: SPI pixel data goes through `writebytes2()` (buffer protocol) instead of
+          chunked `xfer2()`; xfer2 kept only for small command-argument lists.
+Reason:   xfer2 with large `bytes` payloads mishandles data on current py-spidev —
+          observed as full-screen static on first hardware install.
+Files:    drivers/st7735s.py
+Tradeoffs: Requires py-spidev >= 3.4 (2019); fine.
+```
+
 ## Implementation decisions (2026-07-02)
 
 ```

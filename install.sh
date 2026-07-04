@@ -66,7 +66,12 @@ echo
 echo "============================================================"
 systemctl --no-pager status pi-hud | head -5 || true
 echo "------------------------------------------------------------"
+echo "health: $(curl -s "http://127.0.0.1:${PORT:-8765}/health" || echo unreachable)"
 echo "pi-hud is running:  http://127.0.0.1:${PORT:-8765}"
+echo "LAN access: set 'lan_mode = true' in $CFG_DIR/config.ini, then"
+echo "            sudo systemctl restart pi-hud"
+echo "Display triage: sudo systemctl stop pi-hud && sudo PI_HUD_CONFIG=$CFG_DIR/config.ini \\"
+echo "            $APP_DIR/.venv/bin/python -m pi_hud.display_test"
 if [[ -n "$TOKEN" ]]; then
   echo "First app token (shown ONCE — copy it now):"
   echo "   $TOKEN"

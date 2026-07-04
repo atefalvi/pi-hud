@@ -118,7 +118,8 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
 
     # ---------------- Web UI ----------------
     def page(request, name, **ctx):
-        ctx.update(lan_mode=cfg.getbool("api", "lan_mode"))
+        lan = cfg.getbool("api", "lan_mode") or cfg.get("api", "host") == "0.0.0.0"
+        ctx.update(lan_mode=lan)
         return templates.TemplateResponse(request, name, ctx)
 
     @app.get("/", response_class=HTMLResponse)

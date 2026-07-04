@@ -115,14 +115,24 @@ class ST7735S:
     def _data(self, data: Union[bytes, bytearray, List[int]]):
         try:
             self._GPIO.output(self._dc, self._GPIO.HIGH)
-            for i in range(0, len(data), _MAX_SPI_CHUNK):
-                self.spi.xfer2(data[i:i + _MAX_SPI_CHUNK])
+            if isinstance(data, (bytes, bytearray)):
+                # writebytes2 takes the buffer protocol directly and chunks
+                # internally — xfer2 silently mangles large bytes payloads on
+                # some py-spidev versions (symptom: panel shows static).
+                self.spi.writebytes2(data)
+            else:
+                for i in range(0, len(data), _MAX_SPI_CHUNK):
+                    self.spi.xfer2(data[i:i + _MAX_SPI_CHUNK])
         except Exception:
             log.error("data write failed", exc_info=True)
             self._recover()
 
     def _recover(self):
-        """Best-effort one-shot recovery. Logs and returns; never loops."""
+        """Best-effort one-shot recovery. Logs and returns; never loops.
+        Guarded so failures inside recovery can't recurse back into it."""
+        if getattr(self, "_recovering", False):
+            return
+        self._recovering = True
         log.warning("attempting SPI recovery")
         try:
             self.spi.close(); time.sleep(0.1)
@@ -135,6 +145,8 @@ class ST7735S:
             log.info("SPI recovery ok")
         except Exception:
             log.critical("SPI recovery failed", exc_info=True)
+        finally:
+            self._recovering = False
 
     # --- init / rotation ---
     def _init_display(self, invert: bool):

@@ -31,8 +31,13 @@ def main():
         loop.stop()
     signal.signal(signal.SIGTERM, _shutdown)
 
+    # lan_mode is the one switch that opens the API to the LAN; otherwise
+    # bind whatever host is configured (default 127.0.0.1, local-only).
+    host = "0.0.0.0" if cfg.getbool("api", "lan_mode") else cfg.get("api", "host")
+    log.info("binding %s:%s (lan_mode=%s)", host, cfg.getint("api", "port"),
+             cfg.getbool("api", "lan_mode"))
     try:
-        uvicorn.run(app, host=cfg.get("api", "host"),
+        uvicorn.run(app, host=host,
                     port=cfg.getint("api", "port"), workers=1, log_level="info")
     finally:
         loop.stop()

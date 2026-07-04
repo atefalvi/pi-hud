@@ -1,5 +1,21 @@
 # WORKLOG
 
+## 2026-07-04 — field fixes after first install on the Pi
+
+- Symptom: panel backlit but full-screen random static; web UI unreachable from LAN.
+- Root causes:
+  1. Pixel frames were sent as `bytes` through `spi.xfer2()`, which mishandles large
+     bytes payloads on current py-spidev — init commands (small int lists) worked, so the
+     panel powered on showing uninitialized GRAM. Fixed: `writebytes2()` for buffer data.
+  2. `_recover()` could recurse (recovery re-runs init, whose failed writes re-enter
+     recovery). Fixed with a `_recovering` guard.
+  3. `lan_mode = true` was cosmetic; the server only bound the configured host. Fixed:
+     lan_mode now binds 0.0.0.0 (default remains 127.0.0.1 local-only).
+- Added `pi_hud/display_test.py` hardware triage tool (color cycle + wiring hints,
+  `--slow` for 4MHz). install.sh prints health JSON + LAN/triage hints; update.sh now
+  git-pulls and health-checks. README: LAN config + Troubleshooting section.
+- Tests: 15 passed.
+
 ## 2026-07-02
 
 - Work completed: Built pi-hud v1 end to end in one pass.

@@ -76,8 +76,17 @@ curl -X POST http://127.0.0.1:8765/api/v1/messages \
 
 Infrastructure settings live in `/etc/pi-hud/config.ini` (host/port, display pins, SPI,
 refresh intervals) and require a restart. Live-tunable thresholds are edited on the
-**Settings** page. Default is local-only on `127.0.0.1`; set `api_host = 0.0.0.0` for LAN
-mode. **Do not expose pi-hud to the public internet.**
+**Settings** page.
+
+Default is local-only on `127.0.0.1`. To reach the web UI / API from other devices
+(e.g. `http://192.168.x.x:8765`), enable LAN mode explicitly:
+
+```ini
+[api]
+lan_mode = true
+```
+
+then `sudo systemctl restart pi-hud`. **Do not expose pi-hud to the public internet.**
 
 See [`config.example.ini`](config.example.ini).
 
@@ -88,6 +97,25 @@ See [`config.example.ini`](config.example.ini).
 /etc/pi-hud/config.ini       configuration
 /var/lib/pi-hud/pi-hud.db    SQLite database (WAL)
 ```
+
+## Troubleshooting
+
+**Panel shows random static / doesn't update** — run the display triage tool, which
+drives the panel directly and reports each step:
+
+```bash
+sudo systemctl stop pi-hud
+sudo PI_HUD_CONFIG=/etc/pi-hud/config.ini \
+  /opt/pi-hud/.venv/bin/python -m pi_hud.display_test        # add --slow for 4MHz
+sudo systemctl start pi-hud
+```
+
+You should see red → green → blue → white, then the boot screen. If nothing changes,
+check wiring (MOSI=GPIO10, SCLK=GPIO11, CS=CE0/GPIO8, DC/RST/BL per config) and that SPI
+is enabled. `curl http://127.0.0.1:8765/health` reports the display status
+(`ok` / `unavailable`), and `journalctl -u pi-hud -n 50` shows driver errors.
+
+**Can't reach the web UI from another device** — enable LAN mode (see Configuration).
 
 ## Development
 
