@@ -1,5 +1,11 @@
 # WORKLOG
 
+## 2026-07-04 (release) — v1.0.0
+
+- `friendly` Jinja filter: UTC timestamps → local "July 4, 2026 at 9:30 PM EDT"
+  across messages, logs, tokens, timeline. README rewritten (badges, features,
+  wiring, troubleshooting matrix). Tagged v1.0.0 + GitHub release. 24 tests.
+
 ## 2026-07-04 (fourth pass) — form saves 500'd: missing python-multipart
 
 - All HTML form saves (thresholds, tokens, config editor) returned 500: current
