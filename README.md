@@ -1,4 +1,6 @@
-# pi-hud
+# pi HUD
+
+**by DataDreamer**
 
 **A display and notification hub for your home-lab rack, running on a Raspberry Pi.**
 
