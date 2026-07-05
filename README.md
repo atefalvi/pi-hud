@@ -1,3 +1,4 @@
+<div align="center">
 # pi HUD
 
 **by DataDreamer**
@@ -8,6 +9,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-c51a4a)
+
+</div>
 
 `pi-hud` owns an ST7735S 160×80 SPI display and turns it into a glanceable status
 panel for the whole rack. Idle, it shows system vitals — hostname, temperature, CPU,
