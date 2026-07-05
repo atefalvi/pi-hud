@@ -154,4 +154,4 @@ restrained ember accent. Specs, decision log, and test reports live in
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © DataDreamer
