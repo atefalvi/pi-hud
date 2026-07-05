@@ -15,7 +15,7 @@
     <tr><th>Time</th><th>Raw</th><th>Undervolt now</th><th>Throttled now</th><th>Occurred</th></tr>
     {% for p in power %}
     <tr>
-      <td class="mono">{{ p.created_at }}</td>
+      <td class="mono">{{ p.created_at | friendly }}</td>
       <td class="mono">{{ p.raw_value }}</td>
       <td>{% if p.undervoltage_now %}<span class="red">yes</span>{% else %}—{% endif %}</td>
       <td>{% if p.throttled_now %}<span class="yellow">yes</span>{% else %}—{% endif %}</td>
@@ -33,7 +33,7 @@
     <tr><th>Time</th><th>Level</th><th>Source</th><th>Event</th><th>Detail</th></tr>
     {% for l in logs %}
     <tr>
-      <td class="mono">{{ l.created_at }}</td>
+      <td class="mono">{{ l.created_at | friendly }}</td>
       <td class="{{ 'red' if l.level=='error' else 'yellow' if l.level=='warning' else 'muted' }}">{{ l.level }}</td>
       <td>{{ l.source }}</td>
       <td class="mono">{{ l.event }}</td>

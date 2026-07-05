@@ -38,7 +38,7 @@
       <tr>
         <td style="color:var(--text-1)">{{ t.name }}</td>
         <td class="mono">{{ t.token_prefix }}…</td>
-        <td class="mono">{{ t.last_used_at or 'never' }}</td>
+        <td class="mono">{{ t.last_used_at | friendly('never') }}</td>
         <td>{% if t.is_active %}<span class="green">active</span>{% else %}<span class="muted">revoked</span>{% endif %}</td>
         <td>{% if t.is_active %}
           <div style="display:flex;gap:8px">

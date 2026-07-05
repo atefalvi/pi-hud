@@ -11,6 +11,7 @@ import os
 import signal
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -26,6 +27,27 @@ from .models import MessageIn, TokenIn
 
 _HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(_HERE / "templates"))
+
+
+def friendly_time(value, default="—"):
+    """UTC ISO string → 'July 4, 2026 at 9:30 PM EST' in the Pi's local zone.
+    Non-parseable values pass through unchanged."""
+    if not value:
+        return default
+    try:
+        dt = datetime.fromisoformat(str(value))
+    except ValueError:
+        return value
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    dt = dt.astimezone()
+    hour = dt.strftime("%I").lstrip("0") or "12"
+    tz = dt.strftime("%Z")
+    return (f"{dt.strftime('%B')} {dt.day}, {dt.year} at "
+            f"{hour}:{dt.strftime('%M')} {dt.strftime('%p')} {tz}").rstrip()
+
+
+templates.env.filters["friendly"] = friendly_time
 
 # light in-memory rate limit for failed auth: ip -> (count, window_start)
 _fails: dict[str, list] = {}

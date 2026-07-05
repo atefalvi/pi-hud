@@ -1,6 +1,7 @@
 """pi-hud test suite. Covers config, store, auth, power parsing, renderer,
 and the HTTP API. Uses a temp SQLite DB and a headless display."""
 import os
+import re
 import sys
 import tempfile
 
@@ -231,6 +232,16 @@ def test_config_form_post(client, cfg, tmp_path):
         assert (tmp_path / "config.ini").exists()
     finally:
         cfg.path = orig
+
+
+def test_friendly_time():
+    from pi_hud.api import friendly_time
+    out = friendly_time("2026-07-05T01:30:00+00:00")
+    # local-zone dependent, but shape is fixed: "July 4, 2026 at 9:30 PM EDT"
+    assert re.match(r"^[A-Z][a-z]+ \d{1,2}, \d{4} at \d{1,2}:\d{2} [AP]M", out)
+    assert friendly_time(None) == "—"
+    assert friendly_time(None, "never") == "never"
+    assert friendly_time("not-a-date") == "not-a-date"  # passes through
 
 
 def test_pinned_survives_restart(cfg):
