@@ -62,7 +62,7 @@
 
       {% if selected.status == 'active' %}
       <div class="btn-row" style="justify-content:start;margin-top:16px">
-        <button class="btn danger" data-action="/api/v1/messages/{{ selected.id }}/clear">Clear on display</button>
+        <button class="btn danger" data-action="/api/v1/messages/{{ selected.id }}/clear">Clear message</button>
       </div>
       {% endif %}
     {% else %}

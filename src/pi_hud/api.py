@@ -205,9 +205,9 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard(request: Request):
-        am = store.active_message()
+        am = store.display_message()
         return page(request, "dashboard.html", active=_row(am) if am else None,
-                    active_count=store.active_count(), nav="dashboard")
+                    active_count=store.display_count(), nav="dashboard")
 
     @app.get("/messages", response_class=HTMLResponse)
     def messages(request: Request, id: int | None = None, status: str = "all"):
@@ -266,7 +266,10 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
                     "cpu_danger_percent", "ram_warning_percent", "ram_danger_percent",
                     "power_event_pinning"):
             if key in form and str(form[key]).strip():
-                store.set_setting(key, str(form[key]).strip())
+                value = str(form[key]).strip()
+                store.set_setting(key, value)
+                if key == "power_event_pinning":
+                    store.set_active_category_pinned("power", value == "true")
         store.log("info", "admin", "settings_updated", "")
         return RedirectResponse("/settings", status_code=303)
 

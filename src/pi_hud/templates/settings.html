@@ -26,6 +26,42 @@
   </form>
 </div>
 
+<div class="card" style="margin-bottom:24px">
+  <h3>Screen pinning</h3>
+  <p class="small" style="margin-bottom:16px">Only pinned active records can take the physical display. Unpinned records stay visible in Messages and Logs.</p>
+  <form class="stack screen-pin-form" method="post" action="/settings">
+    <div class="screen-pin-grid">
+      <div>
+        <strong>Power dip screen</strong>
+        <span class="small">Created by vcgencmd when undervoltage or throttling is active.</span>
+      </div>
+      <select name="power_event_pinning" aria-label="Pin power dip screen">
+        <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Pinned: yes</option>
+        <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>Pinned: no</option>
+      </select>
+
+      <div>
+        <strong>API message screens</strong>
+        <span class="small">Controlled by each API request's pinned field.</span>
+      </div>
+      <span class="pin-status">Per message</span>
+
+      <div>
+        <strong>Web test screens</strong>
+        <span class="small">Controlled by the web/API message payload.</span>
+      </div>
+      <span class="pin-status">Per message</span>
+
+      <div>
+        <strong>Normal system status</strong>
+        <span class="small">Fallback screen when no pinned alert is active.</span>
+      </div>
+      <span class="pin-status">Always available</span>
+    </div>
+    <div><button class="btn primary" type="submit">Save screen pinning</button></div>
+  </form>
+</div>
+
 <div class="grid-2">
   <div class="card">
     <h3>Live thresholds</h3>
@@ -36,12 +72,6 @@
       <label>CPU danger (%)<input name="cpu_danger_percent" value="{{ thr('cpu_danger_percent') }}"></label>
       <label>RAM warning (%)<input name="ram_warning_percent" value="{{ thr('ram_warning_percent') }}"></label>
       <label>RAM danger (%)<input name="ram_danger_percent" value="{{ thr('ram_danger_percent') }}"></label>
-      <label>Pin power-dip alerts on display
-        <select name="power_event_pinning">
-          <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Yes</option>
-          <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>No</option>
-        </select>
-      </label>
       <div><button class="btn primary" type="submit">Save thresholds</button></div>
     </form>
   </div>

@@ -5,10 +5,10 @@
   <div>
     <div class="kicker">Current instrument</div>
     <h2>Dashboard</h2>
-    <p>The physical display preview plus a concise detail card for the active alert.</p>
+    <p>The physical display preview plus a concise detail card for the pinned alert on screen.</p>
   </div>
   <div class="btn-row">
-    <button class="btn danger" data-action="/api/v1/messages/current/clear">Clear current</button>
+    <button class="btn danger" data-action="/api/v1/messages/current/clear">Clear current display</button>
     <button class="btn" data-action="/api/v1/messages/clear-all">Clear all</button>
   </div>
 </div>
@@ -17,11 +17,11 @@
   <div class="card">
     <h3>Current display</h3>
     <div class="display-preview"><img src="/display.png" width="320" height="160" id="hud" alt="HUD preview"></div>
-    <p class="small" style="margin-top:12px">{{ active_count }} active message{{ '' if active_count==1 else 's' }} · refreshes every few seconds</p>
+    <p class="small" style="margin-top:12px">{{ active_count }} pinned display message{{ '' if active_count==1 else 's' }} · refreshes every few seconds</p>
   </div>
 
   <div class="card">
-    <h3>Active alert summary</h3>
+    <h3>Display alert summary</h3>
     {% if active %}
       <div class="title-line" style="margin-bottom:14px">
         {{ m.sev(active.type) }}<strong style="font-size:18px">{{ active.title }}</strong>{{ m.pin(active) }}

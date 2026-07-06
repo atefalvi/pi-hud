@@ -1,5 +1,17 @@
 # WORKLOG
 
+## 2026-07-06 (release) — v1.0.1
+
+- Pinned now means display-eligible: unpinned active records remain in Messages/Logs
+  but do not take the physical panel. Dashboard and `/display.png` use pinned active
+  messages only; queue screen counts only pinned display messages.
+- Power dip screen pinning moved into a dedicated Settings section. Saving
+  `Pinned: no` immediately removes existing power alerts from the display while
+  preserving the record and power indicator behavior.
+- Added app favicon assets from the supplied pi-hud icon (`favicon.ico`,
+  `favicon.png`, `apple-touch-icon.png`).
+- Tests: 27 passed.
+
 ## 2026-07-04 (release) — v1.0.0
 
 - `friendly` Jinja filter: UTC timestamps → local "July 4, 2026 at 9:30 PM EDT"

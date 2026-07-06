@@ -53,9 +53,16 @@ def list_messages(status="all", limit=50, offset=0):
 
 
 def active_message():
-    """The single message currently shown on the physical display."""
+    """Highest-priority active message, regardless of display pinning."""
     return db.query_one(
         "SELECT * FROM messages WHERE status='active' "
+        "ORDER BY priority DESC, created_at ASC LIMIT 1")
+
+
+def display_message():
+    """The single message eligible for the physical display."""
+    return db.query_one(
+        "SELECT * FROM messages WHERE status='active' AND pinned=1 "
         "ORDER BY priority DESC, created_at ASC LIMIT 1")
 
 
@@ -64,11 +71,25 @@ def active_count() -> int:
         "SELECT COUNT(*) c FROM messages WHERE status='active'")["c"]
 
 
+def display_count() -> int:
+    return db.query_one(
+        "SELECT COUNT(*) c FROM messages WHERE status='active' AND pinned=1")["c"]
+
+
 def queue_groups():
     """Grouped active-message counts for the pending screen, ordered by
     severity. Returns list of (label, count, group_index)."""
+    return _queue_groups("WHERE status='active'")
+
+
+def display_queue_groups():
+    """Grouped display-eligible message counts for the pending screen."""
+    return _queue_groups("WHERE status='active' AND pinned=1")
+
+
+def _queue_groups(where_clause: str):
     rows = db.query(
-        "SELECT type, COUNT(*) c FROM messages WHERE status='active' GROUP BY type")
+        f"SELECT type, COUNT(*) c FROM messages {where_clause} GROUP BY type")
     agg: dict[str, int] = {}
     order: dict[str, int] = {}
     for r in rows:
@@ -87,10 +108,24 @@ def clear_message(mid: int) -> bool:
 
 
 def clear_current() -> int | None:
-    m = active_message()
+    m = display_message()
     if m and clear_message(m["id"]):
         return m["id"]
     return None
+
+
+def set_message_pinned(mid: int, pinned: bool) -> bool:
+    cur = db.write(
+        "UPDATE messages SET pinned=? WHERE id=? AND status='active'",
+        (int(bool(pinned)), mid))
+    return cur.rowcount > 0
+
+
+def set_active_category_pinned(category: str, pinned: bool) -> int:
+    cur = db.write(
+        "UPDATE messages SET pinned=? WHERE status='active' AND category=?",
+        (int(bool(pinned)), category))
+    return cur.rowcount
 
 
 def clear_all() -> int:

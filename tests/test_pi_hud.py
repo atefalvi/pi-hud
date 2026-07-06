@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from pi_hud import auth, config, db, power, renderer  # noqa: E402
+from pi_hud import auth, config, db, display_loop, power, renderer  # noqa: E402
 from pi_hud import message_store as store  # noqa: E402
 from pi_hud.api import create_app  # noqa: E402
 
@@ -48,6 +48,15 @@ def test_active_selection_by_priority(cfg):
     assert store.active_message()["id"] == hi
 
 
+def test_display_selection_requires_pinned(cfg):
+    store.clear_all()
+    store.create_message("a", "error", "record-only", pinned=False, priority=10)
+    shown = store.create_message("a", "info", "display", pinned=True, priority=1)
+    assert store.active_count() == 2
+    assert store.display_count() == 1
+    assert store.display_message()["id"] == shown
+
+
 def test_queue_grouping(cfg):
     store.clear_all()
     store.create_message("a", "error", "e1")
@@ -62,11 +71,22 @@ def test_queue_grouping(cfg):
     assert store.queue_groups()[0][0] == "Error alerts"
 
 
+def test_display_queue_grouping_ignores_unpinned(cfg):
+    store.clear_all()
+    store.create_message("a", "error", "record-only", pinned=False)
+    store.create_message("a", "caution", "shown", pinned=True)
+    groups = dict((g[0], g[1]) for g in store.display_queue_groups())
+    assert "Error alerts" not in groups
+    assert groups["Power alerts"] == 1
+
+
 def test_clear_current(cfg):
     store.clear_all()
-    mid = store.create_message("a", "info", "t")
+    store.create_message("a", "info", "record-only", pinned=False)
+    mid = store.create_message("a", "info", "t", pinned=True)
     assert store.clear_current() == mid
-    assert store.active_count() == 0
+    assert store.active_count() == 1
+    assert store.display_count() == 0
 
 
 # --- auth ---
@@ -96,6 +116,27 @@ def test_power_parse():
     assert power.is_active(f)
     clean = power.parse("throttled=0x0")
     assert not power.has_warning(clean)
+
+
+def test_power_pinning_setting_controls_display_eligibility(cfg):
+    store.clear_all()
+    store.set_setting("power_event_pinning", "false")
+    loop = display_loop.DisplayLoop(cfg)
+    flags = power.parse("throttled=0x1")
+    loop._ensure_power_message(flags)
+    assert store.active_count() == 1
+    assert store.display_count() == 0
+    assert store.active_message()["category"] == "power"
+
+    store.set_setting("power_event_pinning", "true")
+    loop._ensure_power_message(flags)
+    assert store.active_count() == 1
+    assert store.display_count() == 1
+
+    store.set_setting("power_event_pinning", "false")
+    loop._ensure_power_message(flags)
+    assert store.active_count() == 1
+    assert store.display_count() == 0
 
 
 # --- renderer ---
@@ -202,11 +243,16 @@ def test_health_has_version(client):
 
 def test_settings_form_post(client, cfg):
     # HTML form posts require python-multipart; this guards the dependency
+    store.clear_all()
+    store.create_message("system", "caution", "Power Dip", pinned=True,
+                         category="power")
     r = client.post("/settings", data={"temp_warning_c": "60",
                                        "power_event_pinning": "false"},
                     follow_redirects=False)
     assert r.status_code == 303
     assert store.get_setting("temp_warning_c") == "60"
+    assert store.active_count() == 1
+    assert store.display_count() == 0
 
 
 def test_tokens_form_post(client, cfg):

@@ -29,12 +29,12 @@ def _level_color(level: str):
 
 def build_frame(cfg: Config, snap: dict | None = None) -> Image.Image:
     """The image that should currently be on the panel."""
-    active = store.active_message()
-    count = store.active_count()
+    active = store.display_message()
+    count = store.display_count()
 
     if count > 1:
         groups = [(lbl, cnt, _group_color(gi))
-                  for lbl, cnt, gi in store.queue_groups()]
+                  for lbl, cnt, gi in store.display_queue_groups()]
         return renderer.render_queue(count, groups)
 
     if active is not None:
@@ -179,11 +179,14 @@ class DisplayLoop:
 
     def _ensure_power_message(self, flags):
         from . import db
-        row = db.query_one(
-            "SELECT id FROM messages WHERE status='active' AND category='power' LIMIT 1")
-        if row:
-            return
         pinned = store.get_setting("power_event_pinning", "true") == "true"
+        row = db.query_one(
+            "SELECT id, pinned FROM messages WHERE status='active' "
+            "AND category='power' LIMIT 1")
+        if row:
+            if bool(row["pinned"]) != pinned:
+                store.set_message_pinned(row["id"], pinned)
+            return
         title = "Undervoltage" if flags["undervoltage_now"] else "Throttled"
         store.create_message(
             source="system", type="caution", title=f"Power Dip", category="power",
