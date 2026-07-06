@@ -1,121 +1,179 @@
 {% extends "base.html" %}
 {% macro thr(key) %}{{ overrides.get(key, cfg.getint('thresholds', key)) }}{% endmacro %}
 {% block content %}
-<div class="page-top">
-  <div>
-    <div class="kicker">Device</div>
-    <h2>Settings</h2>
-    <p>Thresholds below apply live. Network and display pins live in the config file and need a service restart.</p>
-  </div>
-</div>
-
-{% if lan_mode %}
-<div class="callout" style="margin-bottom:24px;border-color:color-mix(in srgb,var(--danger),transparent 55%);background:color-mix(in srgb,var(--danger),transparent 90%);color:#F3B7B1">
-  LAN mode is enabled ({{ cfg.get('api','host') }}). Do not port-forward pi-hud to the internet.
-</div>
-{% endif %}
-
-<div class="settings-grid">
-  <div class="card">
-    <h3>Live thresholds</h3>
-    <form class="stack settings-form" method="post" action="/settings">
-      <label>Temperature warning (°C)<input name="temp_warning_c" value="{{ thr('temp_warning_c') }}"></label>
-      <label>Temperature danger (°C)<input name="temp_danger_c" value="{{ thr('temp_danger_c') }}"></label>
-      <label>CPU warning (%)<input name="cpu_warning_percent" value="{{ thr('cpu_warning_percent') }}"></label>
-      <label>CPU danger (%)<input name="cpu_danger_percent" value="{{ thr('cpu_danger_percent') }}"></label>
-      <label>RAM warning (%)<input name="ram_warning_percent" value="{{ thr('ram_warning_percent') }}"></label>
-      <label>RAM danger (%)<input name="ram_danger_percent" value="{{ thr('ram_danger_percent') }}"></label>
-      <div><button class="btn primary" type="submit">Save thresholds</button></div>
-    </form>
+<div class="settings-page">
+  <div class="page-top">
+    <div>
+      <div class="kicker">Device</div>
+      <h2>Settings</h2>
+      <p>Thresholds apply live. Operational cleanup keeps the database light. Advanced config writes the INI file and restarts the service.</p>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Screen pinning</h3>
-    <p class="small section-note">Only pinned active records can take the physical display. Unpinned records stay in Messages and Logs.</p>
-    <form class="stack" method="post" action="/settings">
-      <label>Power dip screen
-        <select name="power_event_pinning" aria-label="Pin power dip screen">
-          <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Pinned: yes</option>
-          <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>Pinned: no</option>
-        </select>
-      </label>
-      <div class="setting-list">
-        <div><strong>API messages</strong><span>Per request pinned field</span></div>
-        <div><strong>Web test messages</strong><span>Per message payload</span></div>
-        <div><strong>Normal status</strong><span>Shown when no pinned alert exists</span></div>
+  {% if lan_mode %}
+  <div class="callout settings-callout--danger">
+    LAN mode is enabled ({{ cfg.get('api','host') }}). Do not port-forward pi-hud to the internet.
+  </div>
+  {% endif %}
+
+  <div class="settings-overview">
+    <div><strong>Quick controls</strong><span>Live thresholds and screen behavior</span></div>
+    <div><strong>Maintenance</strong><span>{{ database.size_mb }} MB of {{ database.target_mb }} MB target</span></div>
+    <div><strong>Advanced config</strong><span>Requires service restart</span></div>
+  </div>
+
+  <section class="settings-section">
+    <div class="settings-section-head">
+      <div>
+        <div class="kicker">Quick controls</div>
+        <h3>Live behavior</h3>
       </div>
-      <div><button class="btn primary" type="submit">Save pinning</button></div>
-    </form>
-  </div>
+    </div>
+    <div class="settings-grid">
+      <div class="card settings-card settings-card--quick">
+        <h3>Live thresholds</h3>
+        <form class="stack settings-form settings-form--compact" method="post" action="/settings">
+          <label>Temperature warning (°C)<input name="temp_warning_c" value="{{ thr('temp_warning_c') }}"></label>
+          <label>Temperature danger (°C)<input name="temp_danger_c" value="{{ thr('temp_danger_c') }}"></label>
+          <label>CPU warning (%)<input name="cpu_warning_percent" value="{{ thr('cpu_warning_percent') }}"></label>
+          <label>CPU danger (%)<input name="cpu_danger_percent" value="{{ thr('cpu_danger_percent') }}"></label>
+          <label>RAM warning (%)<input name="ram_warning_percent" value="{{ thr('ram_warning_percent') }}"></label>
+          <label>RAM danger (%)<input name="ram_danger_percent" value="{{ thr('ram_danger_percent') }}"></label>
+          <div><button class="btn primary" type="submit">Save thresholds</button></div>
+        </form>
+      </div>
 
-  <div class="card">
-    <h3>Database maintenance</h3>
-    <div class="db-meter" style="--pct:{{ database.percent }}%">
-      <div><strong>{{ database.size_mb }} MB</strong><span class="small">of {{ database.target_mb }} MB target</span></div>
-      <div class="db-bar"><span></span></div>
+      <div class="card settings-card settings-card--quick">
+        <h3>Screen pinning</h3>
+        <p class="small settings-section-note">Only pinned active records can take the physical display. Unpinned records stay in Messages and Logs.</p>
+        <form class="stack" method="post" action="/settings">
+          <label>Power dip screen
+            <select name="power_event_pinning" aria-label="Pin power dip screen">
+              <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Pinned: yes</option>
+              <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>Pinned: no</option>
+            </select>
+          </label>
+          <div class="setting-list">
+            <div><strong>API messages</strong><span>Per request pinned field</span></div>
+            <div><strong>Web test messages</strong><span>Per message payload</span></div>
+            <div><strong>Normal status</strong><span>Shown when no pinned alert exists</span></div>
+          </div>
+          <div><button class="btn primary" type="submit">Save pinning</button></div>
+        </form>
+      </div>
     </div>
-    {% if database.over_target %}
-    <div class="callout" style="margin-bottom:16px">Database is at or above the configured target. Export it first if you need an archive, then clean logs or messages.</div>
-    {% endif %}
-    <div class="setting-list">
-      <div><strong>Path</strong><span class="mono">{{ database.path }}</span></div>
-      <div><strong>Schedule</strong><span>Automatic weekly cleanup</span></div>
-      <div><strong>Recent detail</strong><span>Kept for {{ maintenance.detail_days }} days</span></div>
-      <div><strong>Message summaries</strong><span>Kept for {{ maintenance.summary_days }} days</span></div>
-      <div><strong>Snapshots</strong><span>Kept for {{ maintenance.snapshot_days }} days</span></div>
-      <div><strong>Last run</strong><span>{{ maintenance.last_at | friendly('not yet') }}</span></div>
-      <div><strong>Next run</strong><span>{{ maintenance.next_at | friendly }}</span></div>
+  </section>
+
+  <section class="settings-section">
+    <div class="settings-section-head">
+      <div>
+        <div class="kicker">Maintenance</div>
+        <h3>Database and tools</h3>
+      </div>
     </div>
-    <form class="stack db-actions" method="post" action="/settings" style="margin-top:16px">
-      <label>Target size (MB)<input name="database_target_mb" value="{{ database.target_mb }}"></label>
-      <div><button class="btn primary" type="submit">Save target</button></div>
-    </form>
-    <div class="btn-row db-actions-row">
-      <a class="btn" href="/settings/database/export">Export DB</a>
-      <form method="post" action="/settings/database/cleanup-logs" onsubmit="return confirm('Delete log records older than 30 days?')">
-        <button class="btn danger" type="submit">Clean logs</button>
+    <div class="settings-grid settings-grid--maintenance">
+      <div class="card settings-card settings-card--maintenance settings-card--wide">
+        <h3>Database maintenance</h3>
+        <div class="db-meter" style="--pct:{{ database.percent }}%">
+          <div><strong>{{ database.size_mb }} MB</strong><span class="small">of {{ database.target_mb }} MB target</span></div>
+          <div class="db-bar"><span></span></div>
+        </div>
+        {% if database.over_target %}
+        <div class="callout settings-callout--warning">Database is at or above the configured target. Export it first if you need an archive, then clean logs or messages.</div>
+        {% endif %}
+        <div class="setting-list">
+          <div><strong>Path</strong><span class="mono">{{ database.path }}</span></div>
+          <div><strong>Schedule</strong><span>Automatic weekly cleanup</span></div>
+          <div><strong>Recent detail</strong><span>Kept for {{ maintenance.detail_days }} days</span></div>
+          <div><strong>Message summaries</strong><span>Kept for {{ maintenance.summary_days }} days</span></div>
+          <div><strong>Snapshots</strong><span>Kept for {{ maintenance.snapshot_days }} days</span></div>
+          <div><strong>Last run</strong><span>{{ maintenance.last_at | friendly('not yet') }}</span></div>
+          <div><strong>Next run</strong><span>{{ maintenance.next_at | friendly }}</span></div>
+        </div>
+        <form class="stack db-actions" method="post" action="/settings">
+          <label>Target size (MB)<input name="database_target_mb" value="{{ database.target_mb }}"></label>
+          <div><button class="btn primary" type="submit">Save target</button></div>
+        </form>
+        <div class="maintenance-actions">
+          <div>
+            <h4>Archive</h4>
+            <p class="small">Download the current SQLite database before cleanup.</p>
+            <a class="btn" href="/settings/database/export">Export DB</a>
+          </div>
+          <div class="danger-zone">
+            <h4>Danger Zone</h4>
+            <p class="small">Deletes old records. Recent 30 days and protected messages are preserved.</p>
+            <div class="btn-row db-actions-row">
+              <form method="post" action="/settings/database/cleanup-logs" onsubmit="return confirm('Delete log records older than 30 days?')">
+                <button class="btn danger" type="submit">Clean logs</button>
+              </form>
+              <form method="post" action="/settings/database/cleanup-messages" onsubmit="return confirm('Delete cleared, unprotected messages older than 30 days?')">
+                <button class="btn danger" type="submit">Clean messages</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card settings-card settings-card--utility">
+        <h3>Display tools</h3>
+        <p class="small settings-section-note">Shows labeled color bars on the physical panel for about 20 seconds, then returns to normal.</p>
+        <form method="post" action="/settings/display-test">
+          <button class="btn primary" type="submit">Run color check</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="settings-section settings-section--advanced">
+    <div class="settings-section-head">
+      <div>
+        <div class="kicker">Advanced config</div>
+        <h3>Config file</h3>
+        <p class="small">Writes <span class="mono">{{ cfg.path or '/etc/pi-hud/config.ini' }}</span> and restarts the service.</p>
+      </div>
+    </div>
+
+    <div class="card settings-card settings-card--advanced">
+      {% macro sel_bool(name, cur) %}
+        <select name="{{ name }}">
+          <option value="true" {{ 'selected' if cur }}>true</option>
+          <option value="false" {{ 'selected' if not cur }}>false</option>
+        </select>
+      {% endmacro %}
+      <form class="stack settings-form settings-form--advanced" method="post" action="/settings/config"
+            onsubmit="return confirm('Save config and restart pi-hud?')">
+        <fieldset>
+          <legend>API</legend>
+          <label>API port<input name="port" value="{{ cfg.get('api','port') }}"></label>
+          <label>LAN mode (bind 0.0.0.0 — never port-forward){{ sel_bool('lan_mode', cfg.getbool('api','lan_mode')) }}</label>
+        </fieldset>
+        <fieldset>
+          <legend>Display basics</legend>
+          <label>Display enabled{{ sel_bool('enabled', cfg.getbool('display','enabled')) }}</label>
+          <label>Rotation (0/90/180/270)<input name="rotation" value="{{ cfg.get('display','rotation') }}"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Display pins</legend>
+          <label>DC pin (BCM)<input name="dc_pin" value="{{ cfg.get('display','dc_pin') }}"></label>
+          <label>RST pin (BCM)<input name="rst_pin" value="{{ cfg.get('display','rst_pin') }}"></label>
+          <label>BL pin (BCM)<input name="bl_pin" value="{{ cfg.get('display','bl_pin') }}"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Display tuning</legend>
+          <label>X offset<input name="x_offset" value="{{ cfg.get('display','x_offset') }}"></label>
+          <label>Y offset<input name="y_offset" value="{{ cfg.get('display','y_offset') }}"></label>
+          <label>SPI speed (Hz)<input name="spi_speed_hz" value="{{ cfg.get('display','spi_speed_hz') }}"></label>
+          <label>BGR color order (flip if red/blue look swapped){{ sel_bool('bgr', cfg.getbool('display','bgr')) }}</label>
+          <label>Invert colors (for panels showing negatives){{ sel_bool('invert', cfg.getbool('display','invert')) }}</label>
+          <label>Normal refresh (s)<input name="normal_refresh_seconds" value="{{ cfg.get('display','normal_refresh_seconds') }}"></label>
+          <label>Power refresh (s)<input name="power_refresh_seconds" value="{{ cfg.get('display','power_refresh_seconds') }}"></label>
+        </fieldset>
+        <div class="advanced-actions">
+          <button class="btn danger" type="submit">Save &amp; restart service</button>
+        </div>
       </form>
-      <form method="post" action="/settings/database/cleanup-messages" onsubmit="return confirm('Delete cleared, unprotected messages older than 30 days?')">
-        <button class="btn danger" type="submit">Clean messages</button>
-      </form>
     </div>
-  </div>
-
-  <div class="card">
-    <h3>Display tools</h3>
-    <p class="small section-note">Shows labeled color bars on the physical panel for about 20 seconds, then returns to normal.</p>
-    <form method="post" action="/settings/display-test">
-      <button class="btn primary" type="submit">Run color check</button>
-    </form>
-  </div>
-
-  <div class="card">
-    <h3>Config file</h3>
-    <p class="small" style="margin-bottom:12px">Writes <span class="mono">{{ cfg.path or '/etc/pi-hud/config.ini' }}</span> and restarts the service (systemd brings it back with the new values).</p>
-    {% macro sel_bool(name, cur) %}
-      <select name="{{ name }}">
-        <option value="true" {{ 'selected' if cur }}>true</option>
-        <option value="false" {{ 'selected' if not cur }}>false</option>
-      </select>
-    {% endmacro %}
-    <form class="stack settings-form" method="post" action="/settings/config"
-          onsubmit="return confirm('Save config and restart pi-hud?')">
-      <label>API port<input name="port" value="{{ cfg.get('api','port') }}"></label>
-      <label>LAN mode (bind 0.0.0.0 — never port-forward){{ sel_bool('lan_mode', cfg.getbool('api','lan_mode')) }}</label>
-      <label>Display enabled{{ sel_bool('enabled', cfg.getbool('display','enabled')) }}</label>
-      <label>Rotation (0/90/180/270)<input name="rotation" value="{{ cfg.get('display','rotation') }}"></label>
-      <label>X offset<input name="x_offset" value="{{ cfg.get('display','x_offset') }}"></label>
-      <label>Y offset<input name="y_offset" value="{{ cfg.get('display','y_offset') }}"></label>
-      <label>DC pin (BCM)<input name="dc_pin" value="{{ cfg.get('display','dc_pin') }}"></label>
-      <label>RST pin (BCM)<input name="rst_pin" value="{{ cfg.get('display','rst_pin') }}"></label>
-      <label>BL pin (BCM)<input name="bl_pin" value="{{ cfg.get('display','bl_pin') }}"></label>
-      <label>SPI speed (Hz)<input name="spi_speed_hz" value="{{ cfg.get('display','spi_speed_hz') }}"></label>
-      <label>BGR color order (flip if red/blue look swapped){{ sel_bool('bgr', cfg.getbool('display','bgr')) }}</label>
-      <label>Invert colors (for panels showing negatives){{ sel_bool('invert', cfg.getbool('display','invert')) }}</label>
-      <label>Normal refresh (s)<input name="normal_refresh_seconds" value="{{ cfg.get('display','normal_refresh_seconds') }}"></label>
-      <label>Power refresh (s)<input name="power_refresh_seconds" value="{{ cfg.get('display','power_refresh_seconds') }}"></label>
-      <div><button class="btn primary" type="submit">Save &amp; restart service</button></div>
-    </form>
-  </div>
+  </section>
 </div>
 {% endblock %}
