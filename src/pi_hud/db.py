@@ -6,6 +6,7 @@ from pathlib import Path
 
 _conn: sqlite3.Connection | None = None
 _lock = threading.Lock()
+_path: Path | None = None
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS messages (
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS messages (
   title TEXT NOT NULL,
   message TEXT,
   pinned INTEGER NOT NULL DEFAULT 0,
+  protected INTEGER NOT NULL DEFAULT 0,
   priority INTEGER NOT NULL DEFAULT 5,
   status TEXT NOT NULL DEFAULT 'active',
   metadata_json TEXT,
@@ -77,17 +79,25 @@ CREATE TABLE IF NOT EXISTS settings (
 
 
 def init(path: str) -> sqlite3.Connection:
-    global _conn
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    global _conn, _path
+    _path = Path(path)
+    _path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     conn.commit()
     _conn = conn
     return conn
+
+
+def _migrate(conn: sqlite3.Connection):
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(messages)").fetchall()}
+    if "protected" not in cols:
+        conn.execute("ALTER TABLE messages ADD COLUMN protected INTEGER NOT NULL DEFAULT 0")
 
 
 def conn() -> sqlite3.Connection:
@@ -110,3 +120,33 @@ def query(sql: str, params: tuple = ()) -> list[sqlite3.Row]:
 
 def query_one(sql: str, params: tuple = ()) -> sqlite3.Row | None:
     return _conn.execute(sql, params).fetchone()
+
+
+def path() -> Path:
+    if _path is None:
+        raise RuntimeError("db.init() not called")
+    return _path
+
+
+def size_bytes() -> int:
+    p = path()
+    total = p.stat().st_size if p.exists() else 0
+    for suffix in ("-wal", "-shm"):
+        sidecar = Path(str(p) + suffix)
+        if sidecar.exists():
+            total += sidecar.stat().st_size
+    return total
+
+
+def maintenance(deleted_rows: int = 0):
+    """Best-effort SQLite upkeep after periodic retention cleanup."""
+    with _lock:
+        _conn.execute("PRAGMA optimize;")
+        if deleted_rows > 0:
+            _conn.execute("VACUUM;")
+        _conn.commit()
+
+
+def checkpoint():
+    with _lock:
+        _conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")

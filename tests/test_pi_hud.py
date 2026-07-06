@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -139,6 +140,57 @@ def test_power_pinning_setting_controls_display_eligibility(cfg):
     assert store.display_count() == 0
 
 
+def test_database_maintenance_summarizes_old_noise(cfg):
+    db.write("DELETE FROM logs")
+    db.write("DELETE FROM messages")
+    db.write("DELETE FROM power_events")
+    db.write("DELETE FROM system_snapshots")
+    db.write("DELETE FROM settings WHERE key='database_maintenance_last_at'")
+
+    now_dt = datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)
+    old = (now_dt - timedelta(days=8)).isoformat(timespec="seconds")
+    older = (now_dt - timedelta(days=31)).isoformat(timespec="seconds")
+
+    for _ in range(3):
+        db.write(
+            "INSERT INTO logs (level, source, event, detail, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("warning", "power", "throttle_state", "throttled=0x1", old))
+        mid = store.create_message("system", "caution", "Power Dip",
+                                   "Undervoltage detected.", pinned=False,
+                                   category="power", metadata={"flags": {"u": 1}})
+        db.write("UPDATE messages SET created_at=? WHERE id=?", (old, mid))
+        db.write(
+            """INSERT INTO power_events
+               (raw_value, undervoltage_now, undervoltage_occurred, throttled_now,
+                throttled_occurred, frequency_capped_now, frequency_capped_occurred,
+                created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            ("throttled=0x1", 1, 0, 0, 0, 0, 0, old))
+
+    pinned = store.create_message("app", "error", "Keep me", pinned=True)
+    db.write("UPDATE messages SET created_at=? WHERE id=?", (old, pinned))
+    db.write(
+        "INSERT INTO system_snapshots "
+        "(cpu_percent, ram_percent, temp_c, disk_percent, api_status, "
+        "display_status, db_status, created_at) VALUES (?,?,?,?,?,?,?,?)",
+        (1, 2, 3, 4, "ok", "ok", "ok", older))
+
+    result = store.run_database_maintenance(now_dt=now_dt, force=True)
+
+    assert result["log_summaries"] >= 1
+    assert result["message_summaries"] >= 1
+    assert result["power_summaries"] >= 1
+    assert db.query_one("SELECT COUNT(*) c FROM system_snapshots")["c"] == 0
+    assert store.get_message(pinned)["pinned"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) c FROM logs WHERE source='retention' "
+        "AND event='log_summary'")["c"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) c FROM messages WHERE source='retention' "
+        "AND category='summary'")["c"] == 1
+
+
 # --- renderer ---
 def test_renderer_clamps_long_title(cfg):
     img = renderer.render_alert("error", "X" * 200, "body", True, "src")
@@ -247,12 +299,51 @@ def test_settings_form_post(client, cfg):
     store.create_message("system", "caution", "Power Dip", pinned=True,
                          category="power")
     r = client.post("/settings", data={"temp_warning_c": "60",
-                                       "power_event_pinning": "false"},
+                                       "power_event_pinning": "false",
+                                       "database_target_mb": "25"},
                     follow_redirects=False)
     assert r.status_code == 303
     assert store.get_setting("temp_warning_c") == "60"
+    assert store.get_setting("database_target_mb") == "25"
     assert store.active_count() == 1
     assert store.display_count() == 0
+
+
+def test_database_settings_actions(client, cfg):
+    db.write("DELETE FROM logs")
+    db.write("DELETE FROM messages")
+    old = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat(timespec="seconds")
+    msg = store.create_message("a", "info", "old", pinned=False)
+    protected = store.create_message("a", "info", "keep", pinned=False)
+    store.clear_message(msg)
+    store.clear_message(protected)
+    store.set_message_protected(protected, True)
+    db.write("UPDATE messages SET created_at=? WHERE id IN (?,?)",
+             (old, msg, protected))
+    db.write("INSERT INTO logs (level, source, event, detail, created_at) "
+             "VALUES (?,?,?,?,?)", ("info", "x", "old", "", old))
+
+    export = client.get("/settings/database/export")
+    assert export.status_code == 200
+    assert "sqlite" in export.headers["content-type"]
+
+    assert client.post("/settings/database/cleanup-logs",
+                       follow_redirects=False).status_code == 303
+    assert db.query_one("SELECT COUNT(*) c FROM logs WHERE source='x'")["c"] == 0
+
+    assert client.post("/settings/database/cleanup-messages",
+                       follow_redirects=False).status_code == 303
+    assert store.get_message(msg) is None
+    assert store.get_message(protected)["protected"] == 1
+
+
+def test_message_protection_api(client, cfg):
+    store.clear_all()
+    mid = store.create_message("a", "info", "keepable")
+    assert client.post(f"/api/v1/messages/{mid}/protect").json()["ok"]
+    assert store.get_message(mid)["protected"] == 1
+    assert client.post(f"/api/v1/messages/{mid}/unprotect").json()["ok"]
+    assert store.get_message(mid)["protected"] == 0
 
 
 def test_tokens_form_post(client, cfg):

@@ -1,5 +1,18 @@
 # WORKLOG
 
+## 2026-07-06 (release) — v1.0.2
+
+- Added lightweight SQLite retention and size controls. Settings now shows DB
+  size, configured target size, path, export action, and manual cleanup actions
+  for logs/messages while keeping the latest 30 days.
+- Background maintenance runs weekly and also forces cleanup when the DB reaches
+  the configured target. It summarizes duplicate old logs/messages/power events,
+  prunes stale snapshots, and checkpoints WAL before export.
+- Messages can be marked `Keep forever`, which protects cleared messages from
+  cleanup without pinning them on the physical display.
+- Settings page layout tightened into cleaner operational sections.
+- Tests: 30 passed.
+
 ## 2026-07-06 (release) — v1.0.1
 
 - Pinned now means display-eligible: unpinned active records remain in Messages/Logs

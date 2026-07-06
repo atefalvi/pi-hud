@@ -130,6 +130,7 @@ class DisplayLoop:
         power_s = self.cfg.getint("display", "power_refresh_seconds")
         last_power = 0.0
         last_snapshot = 0.0
+        last_maintenance = 0.0
         metrics.psutil.cpu_percent(interval=None)  # prime the counter
         while not self._stop.is_set():
             try:
@@ -150,6 +151,9 @@ class DisplayLoop:
                 if nowt - last_snapshot >= 60:
                     self._save_snapshot(snap)
                     last_snapshot = nowt
+                if nowt - last_maintenance >= 86400:
+                    self._run_database_maintenance()
+                    last_maintenance = nowt
             except Exception:
                 log.exception("display loop iteration failed")
             self._stop.wait(normal_s)
@@ -158,6 +162,11 @@ class DisplayLoop:
         store.save_snapshot(snap["cpu_percent"], snap["ram_percent"], snap["temp_c"],
                             snap["disk_percent"], "ok",
                             self.status, "ok")
+
+    def _run_database_maintenance(self):
+        result = store.run_database_maintenance(force=store.database_status()["over_target"])
+        if not result.get("skipped"):
+            log.info("database maintenance completed: %s", result)
 
     def _check_power(self):
         result = power.read()

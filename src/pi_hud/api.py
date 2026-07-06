@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -140,6 +140,14 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
     def api_clear(mid: int):
         return {"ok": store.clear_message(mid)}
 
+    @app.post("/api/v1/messages/{mid}/protect")
+    def api_protect(mid: int):
+        return {"ok": store.set_message_protected(mid, True)}
+
+    @app.post("/api/v1/messages/{mid}/unprotect")
+    def api_unprotect(mid: int):
+        return {"ok": store.set_message_protected(mid, False)}
+
     @app.post("/api/v1/messages/current/clear")
     def api_clear_current():
         return {"ok": store.clear_current() is not None}
@@ -257,20 +265,39 @@ def create_app(cfg: Config, loop: "display_loop.DisplayLoop") -> FastAPI:
     @app.get("/settings", response_class=HTMLResponse)
     def settings(request: Request):
         return page(request, "settings.html", cfg=cfg, overrides=store.all_settings(),
-                    nav="settings")
+                    maintenance=store.maintenance_status(),
+                    database=store.database_status(), nav="settings")
 
     @app.post("/settings")
     async def settings_save(request: Request):
         form = await request.form()
         for key in ("temp_warning_c", "temp_danger_c", "cpu_warning_percent",
                     "cpu_danger_percent", "ram_warning_percent", "ram_danger_percent",
-                    "power_event_pinning"):
+                    "power_event_pinning", "database_target_mb"):
             if key in form and str(form[key]).strip():
                 value = str(form[key]).strip()
                 store.set_setting(key, value)
                 if key == "power_event_pinning":
                     store.set_active_category_pinned("power", value == "true")
         store.log("info", "admin", "settings_updated", "")
+        return RedirectResponse("/settings", status_code=303)
+
+    @app.get("/settings/database/export")
+    def settings_database_export():
+        db.checkpoint()
+        return FileResponse(
+            path=str(db.path()),
+            media_type="application/vnd.sqlite3",
+            filename=f"pi-hud-{datetime.now(timezone.utc).date()}.db")
+
+    @app.post("/settings/database/cleanup-logs")
+    async def settings_cleanup_logs():
+        store.cleanup_logs_keep_days(30)
+        return RedirectResponse("/settings", status_code=303)
+
+    @app.post("/settings/database/cleanup-messages")
+    async def settings_cleanup_messages():
+        store.cleanup_messages_keep_days(30)
         return RedirectResponse("/settings", status_code=303)
 
     # keys editable from the web UI, with light validation

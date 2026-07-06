@@ -15,57 +15,10 @@
 </div>
 {% endif %}
 
-<div class="card" style="margin-bottom:24px">
-  <h3>Display color check</h3>
-  <p class="small" style="margin-bottom:12px">Shows labeled color bars (RED / GRN / BLU / EMBR / WHT)
-  on the physical panel for ~20 seconds, then returns to normal. If the bar under
-  <span class="mono">RED</span> looks blue, flip <strong>BGR color order</strong> below and save.
-  If colors look like a photo negative, flip <strong>Invert colors</strong>.</p>
-  <form method="post" action="/settings/display-test">
-    <button class="btn primary" type="submit">Run color check on display</button>
-  </form>
-</div>
-
-<div class="card" style="margin-bottom:24px">
-  <h3>Screen pinning</h3>
-  <p class="small" style="margin-bottom:16px">Only pinned active records can take the physical display. Unpinned records stay visible in Messages and Logs.</p>
-  <form class="stack screen-pin-form" method="post" action="/settings">
-    <div class="screen-pin-grid">
-      <div>
-        <strong>Power dip screen</strong>
-        <span class="small">Created by vcgencmd when undervoltage or throttling is active.</span>
-      </div>
-      <select name="power_event_pinning" aria-label="Pin power dip screen">
-        <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Pinned: yes</option>
-        <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>Pinned: no</option>
-      </select>
-
-      <div>
-        <strong>API message screens</strong>
-        <span class="small">Controlled by each API request's pinned field.</span>
-      </div>
-      <span class="pin-status">Per message</span>
-
-      <div>
-        <strong>Web test screens</strong>
-        <span class="small">Controlled by the web/API message payload.</span>
-      </div>
-      <span class="pin-status">Per message</span>
-
-      <div>
-        <strong>Normal system status</strong>
-        <span class="small">Fallback screen when no pinned alert is active.</span>
-      </div>
-      <span class="pin-status">Always available</span>
-    </div>
-    <div><button class="btn primary" type="submit">Save screen pinning</button></div>
-  </form>
-</div>
-
-<div class="grid-2">
+<div class="settings-grid">
   <div class="card">
     <h3>Live thresholds</h3>
-    <form class="stack" method="post" action="/settings">
+    <form class="stack settings-form" method="post" action="/settings">
       <label>Temperature warning (°C)<input name="temp_warning_c" value="{{ thr('temp_warning_c') }}"></label>
       <label>Temperature danger (°C)<input name="temp_danger_c" value="{{ thr('temp_danger_c') }}"></label>
       <label>CPU warning (%)<input name="cpu_warning_percent" value="{{ thr('cpu_warning_percent') }}"></label>
@@ -73,6 +26,66 @@
       <label>RAM warning (%)<input name="ram_warning_percent" value="{{ thr('ram_warning_percent') }}"></label>
       <label>RAM danger (%)<input name="ram_danger_percent" value="{{ thr('ram_danger_percent') }}"></label>
       <div><button class="btn primary" type="submit">Save thresholds</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Screen pinning</h3>
+    <p class="small section-note">Only pinned active records can take the physical display. Unpinned records stay in Messages and Logs.</p>
+    <form class="stack" method="post" action="/settings">
+      <label>Power dip screen
+        <select name="power_event_pinning" aria-label="Pin power dip screen">
+          <option value="true" {{ 'selected' if overrides.get('power_event_pinning','true')=='true' }}>Pinned: yes</option>
+          <option value="false" {{ 'selected' if overrides.get('power_event_pinning')=='false' }}>Pinned: no</option>
+        </select>
+      </label>
+      <div class="setting-list">
+        <div><strong>API messages</strong><span>Per request pinned field</span></div>
+        <div><strong>Web test messages</strong><span>Per message payload</span></div>
+        <div><strong>Normal status</strong><span>Shown when no pinned alert exists</span></div>
+      </div>
+      <div><button class="btn primary" type="submit">Save pinning</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Database maintenance</h3>
+    <div class="db-meter" style="--pct:{{ database.percent }}%">
+      <div><strong>{{ database.size_mb }} MB</strong><span class="small">of {{ database.target_mb }} MB target</span></div>
+      <div class="db-bar"><span></span></div>
+    </div>
+    {% if database.over_target %}
+    <div class="callout" style="margin-bottom:16px">Database is at or above the configured target. Export it first if you need an archive, then clean logs or messages.</div>
+    {% endif %}
+    <div class="setting-list">
+      <div><strong>Path</strong><span class="mono">{{ database.path }}</span></div>
+      <div><strong>Schedule</strong><span>Automatic weekly cleanup</span></div>
+      <div><strong>Recent detail</strong><span>Kept for {{ maintenance.detail_days }} days</span></div>
+      <div><strong>Message summaries</strong><span>Kept for {{ maintenance.summary_days }} days</span></div>
+      <div><strong>Snapshots</strong><span>Kept for {{ maintenance.snapshot_days }} days</span></div>
+      <div><strong>Last run</strong><span>{{ maintenance.last_at | friendly('not yet') }}</span></div>
+      <div><strong>Next run</strong><span>{{ maintenance.next_at | friendly }}</span></div>
+    </div>
+    <form class="stack db-actions" method="post" action="/settings" style="margin-top:16px">
+      <label>Target size (MB)<input name="database_target_mb" value="{{ database.target_mb }}"></label>
+      <div><button class="btn primary" type="submit">Save target</button></div>
+    </form>
+    <div class="btn-row db-actions-row">
+      <a class="btn" href="/settings/database/export">Export DB</a>
+      <form method="post" action="/settings/database/cleanup-logs" onsubmit="return confirm('Delete log records older than 30 days?')">
+        <button class="btn danger" type="submit">Clean logs</button>
+      </form>
+      <form method="post" action="/settings/database/cleanup-messages" onsubmit="return confirm('Delete cleared, unprotected messages older than 30 days?')">
+        <button class="btn danger" type="submit">Clean messages</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Display tools</h3>
+    <p class="small section-note">Shows labeled color bars on the physical panel for about 20 seconds, then returns to normal.</p>
+    <form method="post" action="/settings/display-test">
+      <button class="btn primary" type="submit">Run color check</button>
     </form>
   </div>
 
@@ -85,7 +98,7 @@
         <option value="false" {{ 'selected' if not cur }}>false</option>
       </select>
     {% endmacro %}
-    <form class="stack" method="post" action="/settings/config"
+    <form class="stack settings-form" method="post" action="/settings/config"
           onsubmit="return confirm('Save config and restart pi-hud?')">
       <label>API port<input name="port" value="{{ cfg.get('api','port') }}"></label>
       <label>LAN mode (bind 0.0.0.0 — never port-forward){{ sel_bool('lan_mode', cfg.getbool('api','lan_mode')) }}</label>

@@ -22,7 +22,7 @@
         <div>
           <div class="title-line"><strong>{{ msg.title }}</strong>
             <span class="small">{{ msg.metadata.host or msg.category or '' }}</span></div>
-          <div class="small">{{ msg.source }} · {{ 'pinned' if msg.pinned else msg.status }} · {{ msg.created_at | friendly }}</div>
+          <div class="small">{{ msg.source }} · {{ 'kept forever' if msg.protected else 'pinned' if msg.pinned else msg.status }} · {{ msg.created_at | friendly }}</div>
         </div>
         <span class="small">›</span>
       </a>
@@ -36,13 +36,14 @@
     {% if selected %}
       {% set md = selected.metadata %}
       <div class="title-line" style="margin-bottom:12px">
-        {{ m.sev(selected.type) }}<strong style="font-size:20px">{{ selected.title }}</strong>{{ m.pin(selected) }}
+        {{ m.sev(selected.type) }}<strong style="font-size:20px">{{ selected.title }}</strong>{{ m.pin(selected) }}{{ m.protect(selected) }}
       </div>
       <div class="detail-grid">
         <div class="field"><div class="label">Source</div><div class="value">{{ selected.source }}</div></div>
         <div class="field"><div class="label">Created</div><div class="value mono">{{ selected.created_at | friendly }}</div></div>
         <div class="field"><div class="label">Acknowledged</div><div class="value mono">{{ selected.acknowledged_at or '—' }}</div></div>
         <div class="field"><div class="label">Cleared</div><div class="value mono">{{ selected.cleared_at | friendly }}</div></div>
+        <div class="field"><div class="label">Retention</div><div class="value">{{ 'Keep forever' if selected.protected else 'Standard cleanup' }}</div></div>
         <div class="field"><div class="label">Host</div><div class="value">{{ md.host or '—' }}</div></div>
         <div class="field"><div class="label">Record type</div><div class="value">{{ md.record_type or '—' }}</div></div>
         <div class="field"><div class="label">Previous value</div><div class="value">{{ md.previous_value or '—' }}</div></div>
@@ -60,11 +61,16 @@
 
       <div class="code">{{ selected.metadata | tojson(indent=2) if selected.metadata else '{}' }}</div>
 
-      {% if selected.status == 'active' %}
       <div class="btn-row" style="justify-content:start;margin-top:16px">
+        {% if selected.protected %}
+        <button class="btn" data-action="/api/v1/messages/{{ selected.id }}/unprotect">Use standard cleanup</button>
+        {% else %}
+        <button class="btn" data-action="/api/v1/messages/{{ selected.id }}/protect">Keep forever</button>
+        {% endif %}
+        {% if selected.status == 'active' %}
         <button class="btn danger" data-action="/api/v1/messages/{{ selected.id }}/clear">Clear message</button>
+        {% endif %}
       </div>
-      {% endif %}
     {% else %}
       <div class="empty">Select a message to see details.</div>
     {% endif %}

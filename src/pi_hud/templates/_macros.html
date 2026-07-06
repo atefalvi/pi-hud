@@ -14,3 +14,7 @@
 {% macro pin(m) -%}
 {%- if m.pinned and m.status == 'active' -%}<span class="small">Pinned on display</span>{%- endif -%}
 {%- endmacro %}
+
+{% macro protect(m) -%}
+{%- if m.protected -%}<span class="small">Keep forever</span>{%- endif -%}
+{%- endmacro %}
