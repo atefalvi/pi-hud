@@ -1,5 +1,17 @@
 # WORKLOG
 
+## 2026-07-06 (release) — v1.0.3
+
+- Added automatic high-water DB protection for runaway power noise. The display
+  loop checks DB size every 60 seconds and compacts power logs, power messages,
+  and power events when the DB reaches 75% of the configured target size.
+- Power compaction groups similar rows, writes retention summary entries, and
+  keeps the latest 5 raw rows for recent detail.
+- SQLite maintenance now checkpoints/truncates WAL after cleanup so disk usage
+  can shrink after compaction.
+- Settings maintenance panel now states the 75% power compaction threshold.
+- Tests: 31 passed.
+
 ## 2026-07-06 (release) — v1.0.2
 
 - Added lightweight SQLite retention and size controls. Settings now shows DB

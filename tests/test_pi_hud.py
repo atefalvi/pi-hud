@@ -191,6 +191,48 @@ def test_database_maintenance_summarizes_old_noise(cfg):
         "AND category='summary'")["c"] == 1
 
 
+def test_power_noise_compaction_keeps_last_five(cfg):
+    db.write("DELETE FROM logs")
+    db.write("DELETE FROM messages")
+    db.write("DELETE FROM power_events")
+    base = datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)
+
+    for i in range(8):
+        ts = (base + timedelta(seconds=i)).isoformat(timespec="seconds")
+        db.write(
+            "INSERT INTO logs (level, source, event, detail, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("warning", "power", "throttle_state", "throttled=0x1", ts))
+        mid = store.create_message("system", "caution", "Power Dip",
+                                   "Undervoltage detected.", pinned=False,
+                                   category="power", metadata={"flags": {"u": 1}})
+        db.write("UPDATE messages SET created_at=? WHERE id=?", (ts, mid))
+        db.write(
+            """INSERT INTO power_events
+               (raw_value, undervoltage_now, undervoltage_occurred, throttled_now,
+                throttled_occurred, frequency_capped_now, frequency_capped_occurred,
+                created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            ("throttled=0x1", 1, 0, 0, 0, 0, 0, ts))
+
+    result = store.compact_power_noise(keep=5)
+
+    assert result["power_logs_deleted"] == 3
+    assert result["power_messages_deleted"] == 3
+    assert result["power_events_deleted"] == 3
+    assert db.query_one("SELECT COUNT(*) c FROM logs WHERE source='power'")["c"] == 5
+    assert db.query_one(
+        "SELECT COUNT(*) c FROM logs WHERE source='retention' "
+        "AND event='power_log_compaction'")["c"] == 1
+    assert db.query_one(
+        "SELECT COUNT(*) c FROM messages WHERE source='system' "
+        "AND category='power'")["c"] == 5
+    assert db.query_one(
+        "SELECT COUNT(*) c FROM messages WHERE source='retention' "
+        "AND category='summary'")["c"] == 1
+    assert db.query_one("SELECT COUNT(*) c FROM power_events")["c"] == 5
+
+
 # --- renderer ---
 def test_renderer_clamps_long_title(cfg):
     img = renderer.render_alert("error", "X" * 200, "body", True, "src")

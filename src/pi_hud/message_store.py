@@ -229,6 +229,8 @@ MESSAGE_RETENTION_DAYS = 90
 SUMMARY_RETENTION_DAYS = 180
 SNAPSHOT_RETENTION_DAYS = 30
 DEFAULT_DB_TARGET_MB = 25
+HIGH_WATER_PERCENT = 75
+POWER_COMPACT_KEEP = 5
 
 
 def database_status() -> dict:
@@ -242,6 +244,8 @@ def database_status() -> dict:
         "target_mb": target_mb,
         "target_bytes": target_bytes,
         "percent": min(100, round(size * 100 / target_bytes)) if target_bytes else 0,
+        "high_water_percent": HIGH_WATER_PERCENT,
+        "over_high_water": size >= target_bytes * HIGH_WATER_PERCENT / 100,
         "over_target": size >= target_bytes,
     }
 
@@ -292,6 +296,7 @@ def run_database_maintenance(now_dt: datetime | None = None, force: bool = False
     stats = {
         "ok": True,
         "skipped": False,
+        **compact_power_noise(maintain=False),
         "log_summaries": _summarize_logs(weekly_cutoff),
         "message_summaries": _summarize_messages(weekly_cutoff),
         "power_summaries": _summarize_power_events(weekly_cutoff),
@@ -300,13 +305,52 @@ def run_database_maintenance(now_dt: datetime | None = None, force: bool = False
         "power_events_deleted": _delete_old_power_events(message_cutoff),
         "snapshots_deleted": _delete_old_snapshots(snapshot_cutoff),
     }
-    deleted = (stats["logs_deleted"] + stats["messages_deleted"] +
-               stats["power_events_deleted"] + stats["snapshots_deleted"])
+    deleted = (stats["power_logs_deleted"] + stats["power_messages_deleted"] +
+               stats["power_events_deleted"] + stats["logs_deleted"] +
+               stats["messages_deleted"] + stats["snapshots_deleted"])
     db.maintenance(deleted)
     set_setting("database_maintenance_last_at", _iso(now_dt))
     log("info", "retention", "database_maintenance",
         " ".join(f"{k}={v}" for k, v in stats.items() if k not in ("ok", "skipped")))
     return {**stats, **maintenance_status(now_dt)}
+
+
+def run_high_water_maintenance() -> dict:
+    """Fast compaction for runaway power noise when DB size crosses 75% target."""
+    before = database_status()
+    if not before["over_high_water"]:
+        return {"ok": True, "skipped": True, **before}
+    stats = compact_power_noise()
+    after = database_status()
+    log("info", "retention", "database_high_water",
+        f"before_mb={before['size_mb']} after_mb={after['size_mb']} "
+        f"logs_deleted={stats['power_logs_deleted']} "
+        f"messages_deleted={stats['power_messages_deleted']} "
+        f"events_deleted={stats['power_events_deleted']}")
+    return {"ok": True, "skipped": False, **stats, "before": before, "after": after}
+
+
+def compact_power_noise(keep: int = POWER_COMPACT_KEEP, maintain: bool = True) -> dict:
+    """Collapse duplicate power rows immediately, keeping recent raw detail."""
+    stats = {
+        "power_log_summaries": 0,
+        "power_logs_deleted": 0,
+        "power_message_summaries": 0,
+        "power_messages_deleted": 0,
+        "power_event_summaries": 0,
+        "power_events_deleted": 0,
+    }
+    log_stats = _compact_power_logs(keep)
+    msg_stats = _compact_power_messages(keep)
+    event_stats = _compact_power_events(keep)
+    stats.update(log_stats)
+    stats.update(msg_stats)
+    stats.update(event_stats)
+    deleted = (stats["power_logs_deleted"] + stats["power_messages_deleted"] +
+               stats["power_events_deleted"])
+    if maintain:
+        db.maintenance(deleted)
+    return stats
 
 
 def _delete_ids(table: str, ids: list[int]) -> int:
@@ -317,6 +361,113 @@ def _delete_ids(table: str, ids: list[int]) -> int:
         cur = db.write(f"DELETE FROM {table} WHERE id IN ({placeholders})", tuple(chunk))
         deleted += cur.rowcount
     return deleted
+
+
+def _compact_power_logs(keep: int) -> dict:
+    rows = db.query(
+        "SELECT id, level, source, event, detail, created_at FROM logs "
+        "WHERE source='power' ORDER BY created_at ASC")
+    groups: dict[tuple, list] = {}
+    for r in rows:
+        groups.setdefault((r["level"], r["source"], r["event"], r["detail"]), []).append(r)
+
+    summaries = 0
+    deleted = 0
+    for (level, source, event, detail), items in groups.items():
+        if len(items) <= keep:
+            continue
+        items = sorted(items, key=lambda r: (r["created_at"], r["id"]))
+        remove = items[:-keep]
+        kept = items[-keep:]
+        detail_txt = (detail or "").replace("\n", " ")[:180]
+        summary = (f"Compacted {len(remove)} matching power logs from "
+                   f"{remove[0]['created_at']} to {remove[-1]['created_at']}; "
+                   f"kept last {len(kept)}; level={level} event={event}" +
+                   (f" detail={detail_txt}" if detail_txt else ""))
+        db.write(
+            "INSERT INTO logs (level, source, event, detail, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("info", "retention", "power_log_compaction", summary, kept[-1]["created_at"]))
+        deleted += _delete_ids("logs", [r["id"] for r in remove])
+        summaries += 1
+    return {"power_log_summaries": summaries, "power_logs_deleted": deleted}
+
+
+def _compact_power_messages(keep: int) -> dict:
+    rows = db.query(
+        "SELECT * FROM messages WHERE category='power' AND pinned=0 "
+        "AND protected=0 AND source != 'retention' ORDER BY created_at ASC")
+    groups: dict[tuple, list] = {}
+    for r in rows:
+        key = (r["source"], r["type"], r["category"], r["title"], r["message"],
+               r["status"], r["metadata_json"])
+        groups.setdefault(key, []).append(r)
+
+    summaries = 0
+    deleted = 0
+    for key, items in groups.items():
+        if len(items) <= keep:
+            continue
+        source, type_, category, title, message, status, metadata_json = key
+        items = sorted(items, key=lambda r: (r["created_at"], r["id"]))
+        remove = items[:-keep]
+        kept = items[-keep:]
+        summary_meta = {
+            "count": len(remove),
+            "kept": len(kept),
+            "source": source,
+            "type": type_,
+            "category": category,
+            "status": status,
+            "first": remove[0]["created_at"],
+            "last": remove[-1]["created_at"],
+        }
+        summary_msg = (f"Compacted {len(remove)} matching power messages from "
+                       f"{remove[0]['created_at']} to {remove[-1]['created_at']}; "
+                       f"kept last {len(kept)}.")
+        if message:
+            summary_msg = f"{summary_msg} Last detail: {message[:220]}"
+        db.write(
+            """INSERT INTO messages
+               (source, type, category, title, message, pinned, protected, priority,
+                status, metadata_json, created_at, cleared_at)
+               VALUES (?,?,?,?,?,0,0,1,'cleared',?,?,?)""",
+            ("retention", "note", "summary", f"{len(remove)}x {title}"[:48],
+             summary_msg, json.dumps(summary_meta), kept[-1]["created_at"],
+             kept[-1]["created_at"]))
+        deleted += _delete_ids("messages", [r["id"] for r in remove])
+        summaries += 1
+    return {"power_message_summaries": summaries, "power_messages_deleted": deleted}
+
+
+def _compact_power_events(keep: int) -> dict:
+    rows = db.query("SELECT * FROM power_events ORDER BY created_at ASC")
+    groups: dict[tuple, list] = {}
+    for r in rows:
+        key = (r["raw_value"], r["undervoltage_now"], r["undervoltage_occurred"],
+               r["throttled_now"], r["throttled_occurred"],
+               r["frequency_capped_now"], r["frequency_capped_occurred"])
+        groups.setdefault(key, []).append(r)
+
+    summaries = 0
+    deleted = 0
+    for key, items in groups.items():
+        if len(items) <= keep:
+            continue
+        items = sorted(items, key=lambda r: (r["created_at"], r["id"]))
+        remove = items[:-keep]
+        kept = items[-keep:]
+        detail = (f"Compacted {len(remove)} matching power events from "
+                  f"{remove[0]['created_at']} to {remove[-1]['created_at']}; "
+                  f"kept last {len(kept)}; raw={key[0]}")
+        db.write(
+            "INSERT INTO logs (level, source, event, detail, created_at) "
+            "VALUES (?,?,?,?,?)",
+            ("info", "retention", "power_event_compaction", detail,
+             kept[-1]["created_at"]))
+        deleted += _delete_ids("power_events", [r["id"] for r in remove])
+        summaries += 1
+    return {"power_event_summaries": summaries, "power_events_deleted": deleted}
 
 
 def _summarize_logs(cutoff: str) -> int:

@@ -145,6 +145,7 @@ def maintenance(deleted_rows: int = 0):
         if deleted_rows > 0:
             _conn.execute("VACUUM;")
         _conn.commit()
+        _conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
 
 
 def checkpoint():

@@ -131,6 +131,7 @@ class DisplayLoop:
         last_power = 0.0
         last_snapshot = 0.0
         last_maintenance = 0.0
+        last_high_water = 0.0
         metrics.psutil.cpu_percent(interval=None)  # prime the counter
         while not self._stop.is_set():
             try:
@@ -151,6 +152,9 @@ class DisplayLoop:
                 if nowt - last_snapshot >= 60:
                     self._save_snapshot(snap)
                     last_snapshot = nowt
+                if nowt - last_high_water >= 60:
+                    self._run_high_water_maintenance()
+                    last_high_water = nowt
                 if nowt - last_maintenance >= 86400:
                     self._run_database_maintenance()
                     last_maintenance = nowt
@@ -167,6 +171,11 @@ class DisplayLoop:
         result = store.run_database_maintenance(force=store.database_status()["over_target"])
         if not result.get("skipped"):
             log.info("database maintenance completed: %s", result)
+
+    def _run_high_water_maintenance(self):
+        result = store.run_high_water_maintenance()
+        if not result.get("skipped"):
+            log.info("database high-water maintenance completed: %s", result)
 
     def _check_power(self):
         result = power.read()

@@ -84,6 +84,7 @@
         <div class="setting-list">
           <div><strong>Path</strong><span class="mono">{{ database.path }}</span></div>
           <div><strong>Schedule</strong><span>Automatic weekly cleanup</span></div>
+          <div><strong>High water</strong><span>Power rows compact at {{ database.high_water_percent }}% of target</span></div>
           <div><strong>Recent detail</strong><span>Kept for {{ maintenance.detail_days }} days</span></div>
           <div><strong>Message summaries</strong><span>Kept for {{ maintenance.summary_days }} days</span></div>
           <div><strong>Snapshots</strong><span>Kept for {{ maintenance.snapshot_days }} days</span></div>
