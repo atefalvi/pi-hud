@@ -65,7 +65,7 @@
     <tr><td class="mono">type</td><td>yes</td><td>One of <span class="mono">success info note warning caution error critical</span>. Colors the rail, type label, and severity chip. Groups the pending-queue screen (error/critical → Error, warning/caution → Power, rest → Info).</td></tr>
     <tr><td class="mono">title</td><td>yes</td><td>Headline on the panel (max 48, clamped with …) and in all lists.</td></tr>
     <tr><td class="mono">message</td><td>no</td><td>Body (max 500). Up to two short lines on the panel; full text on the detail page.</td></tr>
-    <tr><td class="mono">pinned</td><td>no</td><td>Default false. True shows the PIN chip and keeps the alert on the physical display until cleared (survives reboot).</td></tr>
+    <tr><td class="mono">pinned</td><td>no</td><td>Default false. Active API messages are shown either way; true adds the PIN chip and protects the alert from automatic retention cleanup until it is cleared. Power alerts use the separate Power dip screen setting.</td></tr>
     <tr><td class="mono">priority</td><td>no</td><td>1–10 (default 5). Highest-priority active message is shown; ties go to oldest. Multiple actives → grouped pending screen.</td></tr>
     <tr><td class="mono">category</td><td>no</td><td>Free grouping tag (max 32) — e.g. <span class="mono">dns</span>, <span class="mono">backup</span>. <span class="mono">power</span> is used internally for power alerts.</td></tr>
     <tr><td class="mono">metadata</td><td>no</td><td>Any JSON object, ≤4096 chars serialized. Shown raw on the detail page. The keys below are optional and get special rendering.</td></tr>

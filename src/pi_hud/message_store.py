@@ -80,7 +80,8 @@ def active_message():
 def display_message():
     """The single message eligible for the physical display."""
     return db.query_one(
-        "SELECT * FROM messages WHERE status='active' AND pinned=1 "
+        "SELECT * FROM messages WHERE status='active' "
+        "AND NOT (COALESCE(category, '')='power' AND pinned=0) "
         "ORDER BY priority DESC, created_at ASC LIMIT 1")
 
 
@@ -91,7 +92,8 @@ def active_count() -> int:
 
 def display_count() -> int:
     return db.query_one(
-        "SELECT COUNT(*) c FROM messages WHERE status='active' AND pinned=1")["c"]
+        "SELECT COUNT(*) c FROM messages WHERE status='active' "
+        "AND NOT (COALESCE(category, '')='power' AND pinned=0)")["c"]
 
 
 def queue_groups():
@@ -102,7 +104,9 @@ def queue_groups():
 
 def display_queue_groups():
     """Grouped display-eligible message counts for the pending screen."""
-    return _queue_groups("WHERE status='active' AND pinned=1")
+    return _queue_groups(
+        "WHERE status='active' "
+        "AND NOT (COALESCE(category, '')='power' AND pinned=0)")
 
 
 def _queue_groups(where_clause: str):

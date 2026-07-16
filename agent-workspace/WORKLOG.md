@@ -1,5 +1,15 @@
 # WORKLOG
 
+## 2026-07-16 (release) — v1.0.4
+
+- Fixed display eligibility so active DNS/API messages appear on the physical
+  HUD and in the Dashboard alert summary even when their `pinned` field is false.
+- Limited the unpinned display exclusion to power-dip messages, matching the
+  dedicated Power dip screen setting without suppressing unrelated messages.
+- Updated Dashboard, Settings, and API documentation to describe the corrected
+  behavior.
+- Tests: 32 passed.
+
 ## 2026-07-06 (release) — v1.0.3
 
 - Added automatic high-water DB protection for runaway power noise. The display

@@ -5,7 +5,7 @@
   <div>
     <div class="kicker">Current instrument</div>
     <h2>Dashboard</h2>
-    <p>The physical display preview plus a concise detail card for the pinned alert on screen.</p>
+    <p>The physical display preview plus a concise detail card for the alert on screen.</p>
   </div>
   <div class="btn-row">
     <button class="btn danger" data-action="/api/v1/messages/current/clear">Clear current display</button>
@@ -17,7 +17,7 @@
   <div class="card">
     <h3>Current display</h3>
     <div class="display-preview"><img src="/display.png" width="320" height="160" id="hud" alt="HUD preview"></div>
-    <p class="small" style="margin-top:12px">{{ active_count }} pinned display message{{ '' if active_count==1 else 's' }} · refreshes every few seconds</p>
+    <p class="small" style="margin-top:12px">{{ active_count }} display message{{ '' if active_count==1 else 's' }} · refreshes every few seconds</p>
   </div>
 
   <div class="card">

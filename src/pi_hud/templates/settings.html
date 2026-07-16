@@ -45,7 +45,7 @@
 
       <div class="card settings-card settings-card--quick">
         <h3>Screen pinning</h3>
-        <p class="small settings-section-note">Only pinned active records can take the physical display. Unpinned records stay in Messages and Logs.</p>
+        <p class="small settings-section-note">Active API messages can take the physical display. Power dip records are hidden from the display when power pinning is off.</p>
         <form class="stack" method="post" action="/settings">
           <label>Power dip screen
             <select name="power_event_pinning" aria-label="Pin power dip screen">
@@ -54,9 +54,9 @@
             </select>
           </label>
           <div class="setting-list">
-            <div><strong>API messages</strong><span>Per request pinned field</span></div>
+            <div><strong>API messages</strong><span>Active messages are shown; the request controls the PIN marker</span></div>
             <div><strong>Web test messages</strong><span>Per message payload</span></div>
-            <div><strong>Normal status</strong><span>Shown when no pinned alert exists</span></div>
+            <div><strong>Normal status</strong><span>Shown when no display-eligible alert exists</span></div>
           </div>
           <div><button class="btn primary" type="submit">Save pinning</button></div>
         </form>

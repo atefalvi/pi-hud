@@ -49,13 +49,16 @@ def test_active_selection_by_priority(cfg):
     assert store.active_message()["id"] == hi
 
 
-def test_display_selection_requires_pinned(cfg):
+def test_display_selection_hides_only_unpinned_power(cfg):
     store.clear_all()
-    store.create_message("a", "error", "record-only", pinned=False, priority=10)
-    shown = store.create_message("a", "info", "display", pinned=True, priority=1)
+    hidden = store.create_message("system", "caution", "Power Dip", pinned=False,
+                                  priority=10, category="power")
+    shown = store.create_message("dns-syncer", "success", "DNS updated",
+                                 pinned=False, priority=1, category="dns")
     assert store.active_count() == 2
     assert store.display_count() == 1
     assert store.display_message()["id"] == shown
+    assert store.active_message()["id"] == hidden
 
 
 def test_queue_grouping(cfg):
@@ -72,19 +75,22 @@ def test_queue_grouping(cfg):
     assert store.queue_groups()[0][0] == "Error alerts"
 
 
-def test_display_queue_grouping_ignores_unpinned(cfg):
+def test_display_queue_grouping_ignores_only_unpinned_power(cfg):
     store.clear_all()
-    store.create_message("a", "error", "record-only", pinned=False)
+    store.create_message("a", "error", "shown", pinned=False)
+    store.create_message("system", "caution", "Power Dip", pinned=False,
+                         category="power")
     store.create_message("a", "caution", "shown", pinned=True)
     groups = dict((g[0], g[1]) for g in store.display_queue_groups())
-    assert "Error alerts" not in groups
+    assert groups["Error alerts"] == 1
     assert groups["Power alerts"] == 1
 
 
 def test_clear_current(cfg):
     store.clear_all()
-    store.create_message("a", "info", "record-only", pinned=False)
-    mid = store.create_message("a", "info", "t", pinned=True)
+    store.create_message("system", "caution", "Power Dip", pinned=False,
+                         category="power", priority=10)
+    mid = store.create_message("a", "info", "t", pinned=False)
     assert store.clear_current() == mid
     assert store.active_count() == 1
     assert store.display_count() == 0
@@ -286,6 +292,16 @@ def test_web_pages_render(client):
     for path in ("/", "/messages", "/tokens", "/settings", "/logs", "/docs"):
         assert client.get(path).status_code == 200
     assert client.get("/display.png").headers["content-type"] == "image/png"
+
+
+def test_dashboard_summarizes_unpinned_dns_message(client):
+    store.clear_all()
+    store.create_message("dns-syncer", "success", "DNS record updated",
+                         message="example.test", pinned=False, category="dns")
+    page = client.get("/")
+    assert page.status_code == 200
+    assert "DNS record updated" in page.text
+    assert "No active alerts" not in page.text
 
 
 def test_token_regenerate(cfg):
